@@ -72,14 +72,14 @@ export default function Index() {
                 <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center mb-2">
                   <Users className="h-6 w-6 text-accent" />
                 </div>
-                <CardTitle>All Characters</CardTitle>
+                <CardTitle>30 Heroes</CardTitle>
                 <CardDescription>
-                  Browse every Stadium character with their stats and recommended items.
+                  All Overwatch heroes organized by role with official portraits and stats.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Link to="/characters" className="text-primary text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all">
-                  Explore <ArrowRight className="h-4 w-4" />
+                  View Heroes <ArrowRight className="h-4 w-4" />
                 </Link>
               </CardContent>
             </Card>
@@ -89,21 +89,15 @@ export default function Index() {
                 <div className="h-12 w-12 rounded-lg bg-success/10 flex items-center justify-center mb-2">
                   <Bookmark className="h-6 w-6 text-success" />
                 </div>
-                <CardTitle>Save Builds</CardTitle>
+                <CardTitle>Optimization History</CardTitle>
                 <CardDescription>
-                  Create an account to save your favorite builds and access them anytime.
+                  Track your past optimizations and quickly revisit successful builds.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {user ? (
-                  <Link to="/builds" className="text-primary text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all">
-                    My Builds <ArrowRight className="h-4 w-4" />
-                  </Link>
-                ) : (
-                  <Link to="/auth" className="text-primary text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all">
-                    Sign up free <ArrowRight className="h-4 w-4" />
-                  </Link>
-                )}
+                <Link to="/optimizer" className="text-primary text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all">
+                  Start Optimizing <ArrowRight className="h-4 w-4" />
+                </Link>
               </CardContent>
             </Card>
           </div>
