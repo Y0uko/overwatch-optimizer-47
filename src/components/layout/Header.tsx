@@ -1,13 +1,29 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { Zap, User, LogOut, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { Zap, LogOut, Menu, X, Moon, Sun } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export function Header() {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -49,6 +65,14 @@ export function Header() {
 
           {/* Desktop Auth */}
           <div className="hidden md:flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDarkMode(!darkMode)}
+              aria-label="Toggle dark mode"
+            >
+              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
             {loading ? (
               <div className="h-9 w-20 bg-muted animate-pulse rounded-md" />
             ) : user ? (
@@ -105,7 +129,15 @@ export function Header() {
                   My Builds
                 </Link>
               )}
-              <div className="pt-4 border-t border-border">
+              <div className="pt-4 border-t border-border flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setDarkMode(!darkMode)}
+                  className="w-full"
+                >
+                  {darkMode ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
+                  {darkMode ? 'Light Mode' : 'Dark Mode'}
+                </Button>
                 {user ? (
                   <Button variant="outline" onClick={handleSignOut} className="w-full">
                     <LogOut className="h-4 w-4 mr-2" />
