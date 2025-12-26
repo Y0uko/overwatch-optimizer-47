@@ -1,8 +1,25 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { Zap, LogOut, Menu, X, Moon, Sun } from 'lucide-react';
+import { Zap, LogOut, Menu, X, Moon, Sun, Globe } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+const languages = [
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'pt', name: 'Português', flag: '🇧🇷' },
+  { code: 'ja', name: '日本語', flag: '🇯🇵' },
+  { code: 'ko', name: '한국어', flag: '🇰🇷' },
+  { code: 'zh', name: '中文', flag: '🇨🇳' },
+];
 
 export function Header() {
   const { user, signOut, loading } = useAuth();
@@ -13,6 +30,12 @@ export function Header() {
       return document.documentElement.classList.contains('dark');
     }
     return true;
+  });
+  const [currentLang, setCurrentLang] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('language') || 'en';
+    }
+    return 'en';
   });
 
   useEffect(() => {
@@ -25,10 +48,17 @@ export function Header() {
     }
   }, [darkMode]);
 
+  const handleLanguageChange = (langCode: string) => {
+    setCurrentLang(langCode);
+    localStorage.setItem('language', langCode);
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
+
+  const currentLanguage = languages.find(l => l.code === currentLang) || languages[0];
 
   return (
     <header className="sticky top-0 z-50 glass">
@@ -47,12 +77,6 @@ export function Header() {
             >
               Optimizer
             </Link>
-            <Link 
-              to="/characters" 
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Characters
-            </Link>
             {user && (
               <Link 
                 to="/builds" 
@@ -64,7 +88,29 @@ export function Header() {
           </nav>
 
           {/* Desktop Auth */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
+            {/* Language Selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <span className="text-lg">{currentLanguage.flag}</span>
+                  <span className="text-sm">{currentLanguage.code.toUpperCase()}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-popover">
+                {languages.map((lang) => (
+                  <DropdownMenuItem
+                    key={lang.code}
+                    onClick={() => handleLanguageChange(lang.code)}
+                    className={`cursor-pointer ${currentLang === lang.code ? 'bg-muted' : ''}`}
+                  >
+                    <span className="text-lg mr-2">{lang.flag}</span>
+                    <span>{lang.name}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button
               variant="ghost"
               size="icon"
@@ -113,13 +159,6 @@ export function Header() {
               >
                 Optimizer
               </Link>
-              <Link 
-                to="/characters" 
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Characters
-              </Link>
               {user && (
                 <Link 
                   to="/builds" 
@@ -130,6 +169,28 @@ export function Header() {
                 </Link>
               )}
               <div className="pt-4 border-t border-border flex flex-col gap-2">
+                {/* Mobile Language Selector */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start gap-2">
+                      <span className="text-lg">{currentLanguage.flag}</span>
+                      <span>{currentLanguage.name}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-full bg-popover">
+                    {languages.map((lang) => (
+                      <DropdownMenuItem
+                        key={lang.code}
+                        onClick={() => handleLanguageChange(lang.code)}
+                        className={`cursor-pointer ${currentLang === lang.code ? 'bg-muted' : ''}`}
+                      >
+                        <span className="text-lg mr-2">{lang.flag}</span>
+                        <span>{lang.name}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 <Button
                   variant="outline"
                   onClick={() => setDarkMode(!darkMode)}
