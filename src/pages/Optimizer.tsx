@@ -159,23 +159,90 @@ export default function Optimizer() {
                 <CardTitle className="text-lg">Configuration</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
+                {/* Character Selection by Role */}
+                <div className="space-y-3">
                   <Label>Select Character</Label>
-                  <Select 
-                    value={selectedCharacter?.id || ''} 
-                    onValueChange={(v) => setSelectedCharacter(characters.find(c => c.id === v) || null)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a hero..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {characters.map(char => (
-                        <SelectItem key={char.id} value={char.id}>
-                          {char.name}
-                        </SelectItem>
+                  
+                  {/* Tanks */}
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold text-role-tank uppercase tracking-wider">Tank</div>
+                    <div className="flex flex-wrap gap-2">
+                      {characters.filter(c => c.role === 'tank').map(char => (
+                        <button
+                          key={char.id}
+                          onClick={() => setSelectedCharacter(char)}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all hover:scale-105 ${
+                            selectedCharacter?.id === char.id 
+                              ? 'border-role-tank bg-role-tank/20 ring-2 ring-role-tank' 
+                              : 'border-border hover:border-role-tank/50 bg-muted/50'
+                          }`}
+                        >
+                          {char.image_url && (
+                            <img 
+                              src={char.image_url} 
+                              alt={char.name}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          )}
+                          <span className="text-sm font-medium">{char.name}</span>
+                        </button>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                  </div>
+
+                  {/* Damage */}
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold text-role-damage uppercase tracking-wider">Damage</div>
+                    <div className="flex flex-wrap gap-2">
+                      {characters.filter(c => c.role === 'damage').map(char => (
+                        <button
+                          key={char.id}
+                          onClick={() => setSelectedCharacter(char)}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all hover:scale-105 ${
+                            selectedCharacter?.id === char.id 
+                              ? 'border-role-damage bg-role-damage/20 ring-2 ring-role-damage' 
+                              : 'border-border hover:border-role-damage/50 bg-muted/50'
+                          }`}
+                        >
+                          {char.image_url && (
+                            <img 
+                              src={char.image_url} 
+                              alt={char.name}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          )}
+                          <span className="text-sm font-medium">{char.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Support */}
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold text-role-support uppercase tracking-wider">Support</div>
+                    <div className="flex flex-wrap gap-2">
+                      {characters.filter(c => c.role === 'support').map(char => (
+                        <button
+                          key={char.id}
+                          onClick={() => setSelectedCharacter(char)}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all hover:scale-105 ${
+                            selectedCharacter?.id === char.id 
+                              ? 'border-role-support bg-role-support/20 ring-2 ring-role-support' 
+                              : 'border-border hover:border-role-support/50 bg-muted/50'
+                          }`}
+                        >
+                          {char.image_url && (
+                            <img 
+                              src={char.image_url} 
+                              alt={char.name}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          )}
+                          <span className="text-sm font-medium">{char.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
