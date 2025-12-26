@@ -4,15 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ItemCard } from '@/components/ItemCard';
 import { CharacterCard } from '@/components/CharacterCard';
 import { supabase } from '@/integrations/supabase/client';
 import { Character, Item } from '@/types/database';
-import { Calculator, Coins, Zap, Save, Loader2 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { Calculator, Coins, Zap, History, Clock, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 export default function Optimizer() {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -22,11 +20,13 @@ export default function Optimizer() {
   const [budget, setBudget] = useState(500);
   const [round, setRound] = useState(1);
   const [selectedItems, setSelectedItems] = useState<Item[]>([]);
-  const [buildName, setBuildName] = useState('');
-  const [savingBuild, setSavingBuild] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [optimizationHistory, setOptimizationHistory] = useState<Array<{
+    character: Character;
+    items: Item[];
+    totalCost: number;
+    timestamp: Date;
+  }>>([]);
 
-  const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -83,49 +83,24 @@ export default function Optimizer() {
   const totalHealth = selectedItems.reduce((sum, item) => sum + (item.health_bonus || 0), 0);
   const totalAbility = selectedItems.reduce((sum, item) => sum + (item.ability_power || 0), 0);
 
-  const saveBuild = async () => {
-    if (!user || !selectedCharacter || selectedItems.length === 0) return;
+  // Add to history when items are selected
+  const addToHistory = () => {
+    if (!selectedCharacter || selectedItems.length === 0) return;
     
-    setSavingBuild(true);
-    try {
-      // Create the build
-      const { data: build, error: buildError } = await supabase
-        .from('user_builds')
-        .insert({
-          user_id: user.id,
-          character_id: selectedCharacter.id,
-          name: buildName || `${selectedCharacter.name} Build`,
-        })
-        .select()
-        .single();
+    const newEntry = {
+      character: selectedCharacter,
+      items: [...selectedItems],
+      totalCost,
+      timestamp: new Date(),
+    };
+    
+    setOptimizationHistory(prev => [newEntry, ...prev.slice(0, 9)]); // Keep last 10
+    toast({ title: 'Added to history!' });
+  };
 
-      if (buildError) throw buildError;
-
-      // Add items to build
-      const buildItems = selectedItems.map((item, index) => ({
-        build_id: build.id,
-        item_id: item.id,
-        slot_order: index,
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('build_items')
-        .insert(buildItems);
-
-      if (itemsError) throw itemsError;
-
-      toast({ title: 'Build saved successfully!' });
-      setBuildName('');
-      setDialogOpen(false);
-    } catch (error: any) {
-      toast({
-        title: 'Failed to save build',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setSavingBuild(false);
-    }
+  const loadFromHistory = (entry: typeof optimizationHistory[0]) => {
+    setSelectedCharacter(entry.character);
+    setSelectedItems(entry.items);
   };
 
   if (loading) {
@@ -246,15 +221,22 @@ export default function Optimizer() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="round">Current Round</Label>
-                  <Input
-                    id="round"
-                    type="number"
-                    min={1}
-                    max={20}
-                    value={round}
-                    onChange={(e) => setRound(parseInt(e.target.value) || 1)}
-                  />
+                  <Label>Current Round</Label>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5, 6, 7].map(r => (
+                      <button
+                        key={r}
+                        onClick={() => setRound(r)}
+                        className={`flex-1 py-2 px-3 rounded-lg font-bold text-sm transition-all ${
+                          round === r
+                            ? 'bg-primary text-primary-foreground ring-2 ring-primary'
+                            : 'bg-muted hover:bg-muted/80 text-foreground'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -304,41 +286,10 @@ export default function Optimizer() {
                     </div>
                   </div>
 
-                  {user && selectedCharacter && (
-                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="w-full gap-2">
-                          <Save className="h-4 w-4" />
-                          Save Build
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Save Build</DialogTitle>
-                          <DialogDescription>
-                            Give your build a name to save it for later.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="buildName">Build Name</Label>
-                            <Input
-                              id="buildName"
-                              value={buildName}
-                              onChange={(e) => setBuildName(e.target.value)}
-                              placeholder={`${selectedCharacter.name} Build`}
-                            />
-                          </div>
-                        </div>
-                        <DialogFooter>
-                          <Button onClick={saveBuild} disabled={savingBuild}>
-                            {savingBuild && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  )}
+                  <Button onClick={addToHistory} className="w-full gap-2">
+                    <History className="h-4 w-4" />
+                    Add to History
+                  </Button>
                 </CardContent>
               </Card>
             )}
@@ -379,6 +330,57 @@ export default function Optimizer() {
                       />
                     ))}
                   </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Optimization History */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary" />
+                  Optimization History
+                </CardTitle>
+                <CardDescription>
+                  Your recent optimizations (session only)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {optimizationHistory.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No optimizations yet. Select items and add to history.
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[200px]">
+                    <div className="space-y-3">
+                      {optimizationHistory.map((entry, index) => (
+                        <button
+                          key={index}
+                          onClick={() => loadFromHistory(entry)}
+                          className="w-full p-3 rounded-lg border border-border bg-muted/50 hover:bg-muted transition-all text-left"
+                        >
+                          <div className="flex items-center gap-3">
+                            {entry.character.image_url && (
+                              <img 
+                                src={entry.character.image_url} 
+                                alt={entry.character.name}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">{entry.character.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {entry.items.length} items • {entry.totalCost} credits
+                              </div>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {entry.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
                 )}
               </CardContent>
             </Card>
