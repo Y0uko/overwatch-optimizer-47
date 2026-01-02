@@ -10,7 +10,6 @@ const rarityStyles: Record<ItemRarity, string> = {
   common: 'bg-rarity-common/20 text-rarity-common border-rarity-common/30',
   rare: 'bg-rarity-rare/20 text-rarity-rare border-rarity-rare/30',
   epic: 'bg-rarity-epic/20 text-rarity-epic border-rarity-epic/30',
-  legendary: 'bg-rarity-legendary/20 text-rarity-legendary border-rarity-legendary/30',
 };
 
 export function RarityBadge({ rarity, className }: RarityBadgeProps) {

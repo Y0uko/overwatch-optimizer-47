@@ -1,6 +1,6 @@
 export type CharacterRole = 'tank' | 'damage' | 'support';
-export type ItemCategory = 'weapon' | 'ability' | 'survival';
-export type ItemRarity = 'common' | 'rare' | 'epic' | 'legendary';
+export type ItemCategory = 'weapon' | 'ability' | 'survival' | 'gadget';
+export type ItemRarity = 'common' | 'rare' | 'epic';
 
 export interface Character {
   id: string;
