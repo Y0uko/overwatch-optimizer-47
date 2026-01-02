@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Optimizer from "./pages/Optimizer";
 import Characters from "./pages/Characters";
 import Builds from "./pages/Builds";
+import Items from "./pages/Items";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/optimizer" element={<Optimizer />} />
             <Route path="/characters" element={<Characters />} />
             <Route path="/builds" element={<Builds />} />
+            <Route path="/items" element={<Items />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

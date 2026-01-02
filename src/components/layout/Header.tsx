@@ -77,6 +77,12 @@ export function Header() {
             >
               Optimizer
             </Link>
+            <Link 
+              to="/items" 
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Items
+            </Link>
             {user && (
               <Link 
                 to="/builds" 
@@ -158,6 +164,13 @@ export function Header() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Optimizer
+              </Link>
+              <Link 
+                to="/items" 
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Items
               </Link>
               {user && (
                 <Link 
