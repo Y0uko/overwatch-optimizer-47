@@ -5,12 +5,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ItemCard } from '@/components/ItemCard';
 import { CharacterCard } from '@/components/CharacterCard';
 import { supabase } from '@/integrations/supabase/client';
-import { Character, Item } from '@/types/database';
-import { Calculator, Coins, Zap, History, Clock, Loader2 } from 'lucide-react';
+import { Character, Item, ItemCategory } from '@/types/database';
+import { Calculator, Coins, Zap, History, Clock, Loader2, Sword, Sparkles, Shield, Wrench, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
+const categoryIcons: Record<ItemCategory | 'all', React.ReactNode> = {
+  all: <Package className="h-4 w-4" />,
+  weapon: <Sword className="h-4 w-4" />,
+  ability: <Sparkles className="h-4 w-4" />,
+  survival: <Shield className="h-4 w-4" />,
+  gadget: <Wrench className="h-4 w-4" />,
+};
 
 export default function Optimizer() {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -20,6 +29,7 @@ export default function Optimizer() {
   const [budget, setBudget] = useState(500);
   const [round, setRound] = useState(1);
   const [selectedItems, setSelectedItems] = useState<Item[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<ItemCategory | 'all'>('all');
   const [optimizationHistory, setOptimizationHistory] = useState<Array<{
     character: Character;
     items: Item[];
@@ -49,7 +59,7 @@ export default function Optimizer() {
     const scoredItems = items.map(item => {
       const totalStats = (item.damage_bonus || 0) + (item.health_bonus || 0) + (item.ability_power || 0);
       const efficiency = totalStats / item.cost;
-      const rarityBonus = { common: 0, rare: 1, epic: 2, legendary: 3 }[item.rarity] || 0;
+      const rarityBonus = { common: 0, rare: 1, epic: 2 }[item.rarity] || 0;
       
       // Bonus for role-appropriate items
       let roleBonus = 0;
@@ -63,12 +73,13 @@ export default function Optimizer() {
       };
     });
 
-    // Filter by budget and sort by score
+    // Filter by budget, category, and sort by score
     return scoredItems
       .filter(item => item.cost <= budget)
+      .filter(item => selectedCategory === 'all' || item.category === selectedCategory)
       .sort((a, b) => b.score - a.score)
       .slice(0, 12);
-  }, [items, selectedCharacter, budget]);
+  }, [items, selectedCharacter, budget, selectedCategory]);
 
   const toggleItem = (item: Item) => {
     if (selectedItems.find(i => i.id === item.id)) {
@@ -310,14 +321,40 @@ export default function Optimizer() {
                   }
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {/* Category Filter Tabs */}
+                <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as ItemCategory | 'all')}>
+                  <TabsList className="w-full grid grid-cols-5">
+                    <TabsTrigger value="all" className="gap-1">
+                      {categoryIcons.all}
+                      <span className="hidden sm:inline">All</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="weapon" className="gap-1">
+                      {categoryIcons.weapon}
+                      <span className="hidden sm:inline">Weapon</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="ability" className="gap-1">
+                      {categoryIcons.ability}
+                      <span className="hidden sm:inline">Ability</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="survival" className="gap-1">
+                      {categoryIcons.survival}
+                      <span className="hidden sm:inline">Survival</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="gadget" className="gap-1">
+                      {categoryIcons.gadget}
+                      <span className="hidden sm:inline">Gadget</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+
                 {!selectedCharacter ? (
                   <div className="text-center py-12 text-muted-foreground">
                     Choose a character to get started
                   </div>
                 ) : recommendedItems.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    No items available within your budget
+                    No items available within your budget{selectedCategory !== 'all' ? ` in ${selectedCategory} category` : ''}
                   </div>
                 ) : (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
