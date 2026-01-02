@@ -205,7 +205,7 @@ export type Database = {
     }
     Enums: {
       character_role: "tank" | "damage" | "support"
-      item_category: "weapon" | "ability" | "survival"
+      item_category: "weapon" | "ability" | "survival" | "gadget"
       item_rarity: "common" | "rare" | "epic" | "legendary"
     }
     CompositeTypes: {
@@ -335,7 +335,7 @@ export const Constants = {
   public: {
     Enums: {
       character_role: ["tank", "damage", "support"],
-      item_category: ["weapon", "ability", "survival"],
+      item_category: ["weapon", "ability", "survival", "gadget"],
       item_rarity: ["common", "rare", "epic", "legendary"],
     },
   },
