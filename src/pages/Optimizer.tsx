@@ -8,9 +8,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ItemCard } from '@/components/ItemCard';
 import { CharacterCard } from '@/components/CharacterCard';
+import { BuildCalculator } from '@/components/BuildCalculator';
 import { supabase } from '@/integrations/supabase/client';
 import { Character, Item, ItemCategory } from '@/types/database';
-import { Calculator, Coins, Zap, History, Clock, Loader2, Sword, Sparkles, Shield, Wrench, Package } from 'lucide-react';
+import { Calculator, Coins, Zap, History, Clock, Loader2, Sword, Sparkles, Shield, Wrench, Package, X, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const categoryIcons: Record<ItemCategory | 'all', React.ReactNode> = {
@@ -26,7 +27,7 @@ export default function Optimizer() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
-  const [budget, setBudget] = useState(500);
+  const [budget, setBudget] = useState(5000);
   const [round, setRound] = useState(1);
   const [selectedItems, setSelectedItems] = useState<Item[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<ItemCategory | 'all'>('all');
@@ -89,10 +90,16 @@ export default function Optimizer() {
     }
   };
 
+  const removeItem = (itemId: string) => {
+    setSelectedItems(selectedItems.filter(i => i.id !== itemId));
+  };
+
+  const clearBuild = () => {
+    setSelectedItems([]);
+    toast({ title: 'Build cleared' });
+  };
+
   const totalCost = selectedItems.reduce((sum, item) => sum + item.cost, 0);
-  const totalDamage = selectedItems.reduce((sum, item) => sum + (item.damage_bonus || 0), 0);
-  const totalHealth = selectedItems.reduce((sum, item) => sum + (item.health_bonus || 0), 0);
-  const totalAbility = selectedItems.reduce((sum, item) => sum + (item.ability_power || 0), 0);
 
   // Add to history when items are selected
   const addToHistory = () => {
@@ -272,37 +279,19 @@ export default function Optimizer() {
               <CharacterCard character={selectedCharacter} />
             )}
 
-            {/* Selected Items Summary */}
+            {/* Build Calculator */}
+            <BuildCalculator character={selectedCharacter} items={selectedItems} />
+            
             {selectedItems.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Selected Items</CardTitle>
-                  <CardDescription>
-                    {selectedItems.length} items • {totalCost} credits
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-3 gap-2 text-sm">
-                    <div className="text-center p-2 bg-muted rounded-lg">
-                      <div className="font-mono font-bold text-role-damage">+{totalDamage}</div>
-                      <div className="text-xs text-muted-foreground">Damage</div>
-                    </div>
-                    <div className="text-center p-2 bg-muted rounded-lg">
-                      <div className="font-mono font-bold text-role-support">+{totalHealth}</div>
-                      <div className="text-xs text-muted-foreground">Health</div>
-                    </div>
-                    <div className="text-center p-2 bg-muted rounded-lg">
-                      <div className="font-mono font-bold text-rarity-epic">+{totalAbility}</div>
-                      <div className="text-xs text-muted-foreground">Ability</div>
-                    </div>
-                  </div>
-
-                  <Button onClick={addToHistory} className="w-full gap-2">
-                    <History className="h-4 w-4" />
-                    Add to History
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="flex gap-2">
+                <Button onClick={addToHistory} className="flex-1 gap-2">
+                  <History className="h-4 w-4" />
+                  Save to History
+                </Button>
+                <Button onClick={clearBuild} variant="outline" size="icon">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             )}
           </div>
 

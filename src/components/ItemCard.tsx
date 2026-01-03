@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { Item, ItemCategory } from '@/types/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { RarityBadge } from '@/components/ui/RarityBadge';
-import { Coins, Sword, Heart, Sparkles, Shield, Wrench, Package } from 'lucide-react';
+import { Coins, Sword, Heart, Sparkles, Shield, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ItemCardProps {
@@ -9,6 +10,7 @@ interface ItemCardProps {
   selected?: boolean;
   onSelect?: () => void;
   showStats?: boolean;
+  compact?: boolean;
 }
 
 const categoryIcons: Record<ItemCategory, React.ReactNode> = {
@@ -25,7 +27,10 @@ const categoryColors: Record<ItemCategory, string> = {
   gadget: 'bg-role-tank/20 text-role-tank',
 };
 
-export function ItemCard({ item, selected, onSelect, showStats = true }: ItemCardProps) {
+export function ItemCard({ item, selected, onSelect, showStats = true, compact = false }: ItemCardProps) {
+  const [imageError, setImageError] = useState(false);
+  const showFallback = !item.image_url || imageError;
+
   return (
     <Card 
       className={cn(
@@ -34,23 +39,20 @@ export function ItemCard({ item, selected, onSelect, showStats = true }: ItemCar
       )}
       onClick={onSelect}
     >
-      <CardContent className="p-4">
+      <CardContent className={compact ? 'p-3' : 'p-4'}>
         <div className="flex items-start gap-3 mb-3">
           {/* Item Image or Category Icon */}
           <div className={cn(
-            'flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden',
-            !item.image_url && categoryColors[item.category]
+            'flex-shrink-0 rounded-lg flex items-center justify-center overflow-hidden',
+            compact ? 'w-10 h-10' : 'w-12 h-12',
+            showFallback && categoryColors[item.category]
           )}>
-            {item.image_url ? (
+            {!showFallback ? (
               <img 
-                src={item.image_url} 
+                src={item.image_url!} 
                 alt={item.name}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  // Fallback to category icon if image fails
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.parentElement?.classList.add(categoryColors[item.category]);
-                }}
+                onError={() => setImageError(true)}
               />
             ) : (
               categoryIcons[item.category]
@@ -59,11 +61,11 @@ export function ItemCard({ item, selected, onSelect, showStats = true }: ItemCar
           
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-semibold text-sm leading-tight">{item.name}</h3>
+              <h3 className={cn('font-semibold leading-tight', compact ? 'text-xs' : 'text-sm')}>{item.name}</h3>
               <RarityBadge rarity={item.rarity} />
             </div>
             
-            <div className="flex items-center gap-1 text-primary font-mono text-sm mt-1">
+            <div className={cn('flex items-center gap-1 text-primary font-mono mt-1', compact ? 'text-xs' : 'text-sm')}>
               <Coins className="h-3.5 w-3.5" />
               <span>{item.cost.toLocaleString()}</span>
             </div>
