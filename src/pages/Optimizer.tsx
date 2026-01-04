@@ -53,7 +53,8 @@ export default function Optimizer() {
     fetchData();
   }, []);
 
-  // Calculate remaining budget after selected items
+  // Calculate total cost first, then remaining budget
+  const totalCost = selectedItems.reduce((sum, item) => sum + item.cost, 0);
   const remainingBudget = budget - totalCost;
 
   // Get optimal build - best combination of items within budget
@@ -130,6 +131,15 @@ export default function Optimizer() {
     if (selectedItems.find(i => i.id === item.id)) {
       setSelectedItems(selectedItems.filter(i => i.id !== item.id));
     } else {
+      // Check if we can afford and haven't hit item limit
+      if (selectedItems.length >= 6) {
+        toast({ title: 'Maximum 6 items', description: 'Remove an item to add a new one', variant: 'destructive' });
+        return;
+      }
+      if (item.cost > remainingBudget) {
+        toast({ title: 'Not enough budget', description: `Need ${item.cost - remainingBudget} more credits`, variant: 'destructive' });
+        return;
+      }
       setSelectedItems([...selectedItems, item]);
     }
   };
@@ -143,7 +153,7 @@ export default function Optimizer() {
     toast({ title: 'Build cleared' });
   };
 
-  const totalCost = selectedItems.reduce((sum, item) => sum + item.cost, 0);
+  // totalCost already calculated above
 
   // Add to history when items are selected
   const addToHistory = () => {
@@ -309,13 +319,48 @@ export default function Optimizer() {
                       id="budget"
                       type="number"
                       min={0}
-                      step={50}
+                      step={500}
                       value={budget}
                       onChange={(e) => setBudget(parseInt(e.target.value) || 0)}
                       className="pl-10"
                     />
                   </div>
+                  
+                  {/* Budget Status */}
+                  <div className="mt-3 p-3 rounded-lg bg-muted/50 border">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">Spent</span>
+                      <span className="font-mono font-medium">{totalCost.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">Remaining</span>
+                      <span className={`font-mono font-medium ${remainingBudget < 0 ? 'text-destructive' : 'text-primary'}`}>
+                        {remainingBudget.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                      <div 
+                        className={`h-full transition-all ${remainingBudget < 0 ? 'bg-destructive' : 'bg-primary'}`}
+                        style={{ width: `${Math.min(100, (totalCost / budget) * 100)}%` }}
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1 text-center">
+                      {selectedItems.length}/6 items selected
+                    </div>
+                  </div>
                 </div>
+
+                {/* Apply Optimal Build Button */}
+                {selectedCharacter && optimalBuild.length > 0 && (
+                  <Button 
+                    onClick={() => setSelectedItems(optimalBuild)}
+                    variant="secondary"
+                    className="w-full gap-2"
+                  >
+                    <Zap className="h-4 w-4" />
+                    Apply Optimal Build ({optimalBuild.reduce((sum, i) => sum + i.cost, 0).toLocaleString()} credits)
+                  </Button>
+                )}
               </CardContent>
             </Card>
 
@@ -349,7 +394,9 @@ export default function Optimizer() {
                 </CardTitle>
                 <CardDescription>
                   {selectedCharacter 
-                    ? `Best items for ${selectedCharacter.name} within ${budget} credits`
+                    ? remainingBudget > 0 
+                      ? `Affordable items for ${selectedCharacter.name} (${remainingBudget.toLocaleString()} credits left)`
+                      : `No budget remaining - remove items to see more options`
                     : 'Select a character to see recommendations'
                   }
                 </CardDescription>
