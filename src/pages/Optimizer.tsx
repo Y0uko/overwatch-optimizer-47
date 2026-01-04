@@ -27,7 +27,7 @@ export default function Optimizer() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
-  const [budget, setBudget] = useState(5000);
+  const [budget, setBudget] = useState(3500);
   const [round, setRound] = useState(1);
   const [selectedItems, setSelectedItems] = useState<Item[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<ItemCategory | 'all'>('all');
