@@ -53,13 +53,54 @@ export default function Optimizer() {
     fetchData();
   }, []);
 
+  // Calculate remaining budget after selected items
+  const remainingBudget = budget - totalCost;
+
+  // Get optimal build - best combination of items within budget
+  const optimalBuild = useMemo(() => {
+    if (!selectedCharacter) return [];
+    
+    // Score items by efficiency for the character's role
+    const scoredItems = items
+      .filter(item => selectedCategory === 'all' || item.category === selectedCategory)
+      .map(item => {
+        const totalStats = (item.damage_bonus || 0) + (item.health_bonus || 0) + (item.ability_power || 0);
+        const efficiency = item.cost > 0 ? totalStats / item.cost : 0;
+        const rarityBonus = { common: 0, rare: 1, epic: 2, legendary: 3 }[item.rarity] || 0;
+        
+        let roleBonus = 0;
+        if (selectedCharacter.role === 'damage' && (item.damage_bonus || 0) > 0) roleBonus = 3;
+        if (selectedCharacter.role === 'tank' && (item.health_bonus || 0) > 0) roleBonus = 3;
+        if (selectedCharacter.role === 'support' && (item.ability_power || 0) > 0) roleBonus = 3;
+
+        return {
+          ...item,
+          score: efficiency * 100 + rarityBonus * 0.5 + roleBonus + totalStats * 0.1,
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    // Greedy algorithm to find best combination within budget
+    const selected: typeof scoredItems = [];
+    let spent = 0;
+    
+    for (const item of scoredItems) {
+      if (spent + item.cost <= budget && selected.length < 6) {
+        selected.push(item);
+        spent += item.cost;
+      }
+    }
+    
+    return selected;
+  }, [items, selectedCharacter, budget, selectedCategory]);
+
   const recommendedItems = useMemo(() => {
     if (!selectedCharacter) return [];
     
     // Calculate efficiency score (stats per cost)
     const scoredItems = items.map(item => {
       const totalStats = (item.damage_bonus || 0) + (item.health_bonus || 0) + (item.ability_power || 0);
-      const efficiency = totalStats / item.cost;
+      const efficiency = item.cost > 0 ? totalStats / item.cost : 0;
       const rarityBonus = { common: 0, rare: 1, epic: 2 }[item.rarity] || 0;
       
       // Bonus for role-appropriate items
@@ -74,13 +115,16 @@ export default function Optimizer() {
       };
     });
 
-    // Filter by budget, category, and sort by score
+    // Filter by REMAINING budget (dynamic), category, and sort by score
+    // Also exclude already selected items
+    const selectedIds = new Set(selectedItems.map(i => i.id));
     return scoredItems
-      .filter(item => item.cost <= budget)
+      .filter(item => !selectedIds.has(item.id))
+      .filter(item => item.cost <= remainingBudget)
       .filter(item => selectedCategory === 'all' || item.category === selectedCategory)
       .sort((a, b) => b.score - a.score)
       .slice(0, 12);
-  }, [items, selectedCharacter, budget, selectedCategory]);
+  }, [items, selectedCharacter, remainingBudget, selectedCategory, selectedItems]);
 
   const toggleItem = (item: Item) => {
     if (selectedItems.find(i => i.id === item.id)) {
