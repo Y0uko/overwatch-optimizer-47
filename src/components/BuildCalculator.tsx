@@ -3,12 +3,14 @@ import { Item, Character } from '@/types/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Sword, Heart, Sparkles, Coins, TrendingUp, Zap, Shield, Target, Clock, Wind } from 'lucide-react';
+import { Sword, Heart, Sparkles, Coins, TrendingUp, Zap, Shield, Target, Clock, Wind, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface BuildCalculatorProps {
   character: Character | null;
   items: Item[];
+  onRemoveItem?: (itemId: string) => void;
 }
 
 interface Synergy {
@@ -90,7 +92,7 @@ const SYNERGY_PATTERNS = {
   },
 };
 
-export function BuildCalculator({ character, items }: BuildCalculatorProps) {
+export function BuildCalculator({ character, items, onRemoveItem }: BuildCalculatorProps) {
   const stats = useMemo(() => {
     const totalCost = items.reduce((sum, item) => sum + item.cost, 0);
     const totalDamage = items.reduce((sum, item) => sum + (item.damage_bonus || 0), 0);
@@ -341,8 +343,18 @@ export function BuildCalculator({ character, items }: BuildCalculatorProps) {
             {items.map((item) => (
               <div 
                 key={item.id}
-                className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
+                className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 group hover:bg-muted transition-colors"
               >
+                {onRemoveItem && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => onRemoveItem(item.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm truncate">{item.name}</div>
                   {item.special_effect && (
