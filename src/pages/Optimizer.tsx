@@ -369,7 +369,7 @@ export default function Optimizer() {
             )}
 
             {/* Build Calculator */}
-            <BuildCalculator character={selectedCharacter} items={selectedItems} />
+            <BuildCalculator character={selectedCharacter} items={selectedItems} onRemoveItem={removeItem} />
             
             {selectedItems.length > 0 && (
               <div className="flex gap-2">
