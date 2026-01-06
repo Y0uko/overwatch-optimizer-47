@@ -187,38 +187,38 @@ export default function Optimizer() {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-            <Calculator className="h-8 w-8 text-primary" />
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="mb-4 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 flex items-center gap-2">
+            <Calculator className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
             Item Optimizer
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Select your hero, set your budget, and get optimal item recommendations.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Left: Configuration */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Configuration</CardTitle>
+              <CardHeader className="pb-2 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg">Configuration</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Character Selection by Role */}
-                <div className="space-y-3">
-                  <Label>Select Character</Label>
+              <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
+                {/* Character Selection by Role - Scrollable on mobile */}
+                <div className="space-y-2 sm:space-y-3">
+                  <Label className="text-sm">Select Character</Label>
                   
                   {/* Tanks */}
-                  <div className="space-y-2">
+                  <div className="space-y-1.5 sm:space-y-2">
                     <div className="text-xs font-semibold text-role-tank uppercase tracking-wider">Tank</div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {characters.filter(c => c.role === 'tank').map(char => (
                         <button
                           key={char.id}
                           onClick={() => setSelectedCharacter(char)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all hover:scale-105 ${
+                          className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-all hover:scale-105 ${
                             selectedCharacter?.id === char.id 
                               ? 'border-role-tank bg-role-tank/20 ring-2 ring-role-tank' 
                               : 'border-border hover:border-role-tank/50 bg-muted/50'
@@ -228,24 +228,24 @@ export default function Optimizer() {
                             <img 
                               src={char.image_url} 
                               alt={char.name}
-                              className="w-8 h-8 rounded-full object-cover"
+                              className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover"
                             />
                           )}
-                          <span className="text-sm font-medium">{char.name}</span>
+                          <span className="text-xs sm:text-sm font-medium">{char.name}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
                   {/* Damage */}
-                  <div className="space-y-2">
+                  <div className="space-y-1.5 sm:space-y-2">
                     <div className="text-xs font-semibold text-role-damage uppercase tracking-wider">Damage</div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {characters.filter(c => c.role === 'damage').map(char => (
                         <button
                           key={char.id}
                           onClick={() => setSelectedCharacter(char)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all hover:scale-105 ${
+                          className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-all hover:scale-105 ${
                             selectedCharacter?.id === char.id 
                               ? 'border-role-damage bg-role-damage/20 ring-2 ring-role-damage' 
                               : 'border-border hover:border-role-damage/50 bg-muted/50'
@@ -255,24 +255,24 @@ export default function Optimizer() {
                             <img 
                               src={char.image_url} 
                               alt={char.name}
-                              className="w-8 h-8 rounded-full object-cover"
+                              className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover"
                             />
                           )}
-                          <span className="text-sm font-medium">{char.name}</span>
+                          <span className="text-xs sm:text-sm font-medium">{char.name}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
                   {/* Support */}
-                  <div className="space-y-2">
+                  <div className="space-y-1.5 sm:space-y-2">
                     <div className="text-xs font-semibold text-role-support uppercase tracking-wider">Support</div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {characters.filter(c => c.role === 'support').map(char => (
                         <button
                           key={char.id}
                           onClick={() => setSelectedCharacter(char)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all hover:scale-105 ${
+                          className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-all hover:scale-105 ${
                             selectedCharacter?.id === char.id 
                               ? 'border-role-support bg-role-support/20 ring-2 ring-role-support' 
                               : 'border-border hover:border-role-support/50 bg-muted/50'
@@ -282,24 +282,24 @@ export default function Optimizer() {
                             <img 
                               src={char.image_url} 
                               alt={char.name}
-                              className="w-8 h-8 rounded-full object-cover"
+                              className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover"
                             />
                           )}
-                          <span className="text-sm font-medium">{char.name}</span>
+                          <span className="text-xs sm:text-sm font-medium">{char.name}</span>
                         </button>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Current Round</Label>
-                  <div className="flex gap-1">
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label className="text-sm">Current Round</Label>
+                  <div className="flex gap-0.5 sm:gap-1">
                     {[1, 2, 3, 4, 5, 6, 7].map(r => (
                       <button
                         key={r}
                         onClick={() => setRound(r)}
-                        className={`flex-1 py-2 px-3 rounded-lg font-bold text-sm transition-all ${
+                        className={`flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg font-bold text-xs sm:text-sm transition-all ${
                           round === r
                             ? 'bg-primary text-primary-foreground ring-2 ring-primary'
                             : 'bg-muted hover:bg-muted/80 text-foreground'
@@ -311,8 +311,8 @@ export default function Optimizer() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="budget">Budget (Credits)</Label>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label htmlFor="budget" className="text-sm">Budget (Credits)</Label>
                   <div className="relative">
                     <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -322,23 +322,23 @@ export default function Optimizer() {
                       step={500}
                       value={budget}
                       onChange={(e) => setBudget(parseInt(e.target.value) || 0)}
-                      className="pl-10"
+                      className="pl-10 h-9 sm:h-10"
                     />
                   </div>
                   
                   {/* Budget Status */}
-                  <div className="mt-3 p-3 rounded-lg bg-muted/50 border">
-                    <div className="flex justify-between text-sm mb-2">
+                  <div className="mt-2 sm:mt-3 p-2 sm:p-3 rounded-lg bg-muted/50 border">
+                    <div className="flex justify-between text-xs sm:text-sm mb-1.5 sm:mb-2">
                       <span className="text-muted-foreground">Spent</span>
                       <span className="font-mono font-medium">{totalCost.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-sm mb-2">
+                    <div className="flex justify-between text-xs sm:text-sm mb-1.5 sm:mb-2">
                       <span className="text-muted-foreground">Remaining</span>
                       <span className={`font-mono font-medium ${remainingBudget < 0 ? 'text-destructive' : 'text-primary'}`}>
                         {remainingBudget.toLocaleString()}
                       </span>
                     </div>
-                    <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-muted rounded-full h-1.5 sm:h-2 overflow-hidden">
                       <div 
                         className={`h-full transition-all ${remainingBudget < 0 ? 'bg-destructive' : 'bg-primary'}`}
                         style={{ width: `${Math.min(100, (totalCost / budget) * 100)}%` }}
@@ -355,10 +355,11 @@ export default function Optimizer() {
                   <Button 
                     onClick={() => setSelectedItems(optimalBuild)}
                     variant="secondary"
-                    className="w-full gap-2"
+                    className="w-full gap-2 h-9 sm:h-10 text-xs sm:text-sm"
                   >
-                    <Zap className="h-4 w-4" />
-                    Apply Optimal Build ({optimalBuild.reduce((sum, i) => sum + i.cost, 0).toLocaleString()} credits)
+                    <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Apply Optimal Build ({optimalBuild.reduce((sum, i) => sum + i.cost, 0).toLocaleString()} credits)</span>
+                    <span className="sm:hidden">Optimal ({optimalBuild.reduce((sum, i) => sum + i.cost, 0).toLocaleString()})</span>
                   </Button>
                 )}
               </CardContent>
@@ -373,12 +374,13 @@ export default function Optimizer() {
             
             {selectedItems.length > 0 && (
               <div className="flex gap-2">
-                <Button onClick={addToHistory} className="flex-1 gap-2">
-                  <History className="h-4 w-4" />
-                  Save to History
+                <Button onClick={addToHistory} className="flex-1 gap-2 h-9 sm:h-10 text-xs sm:text-sm">
+                  <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Save to History</span>
+                  <span className="sm:hidden">Save</span>
                 </Button>
-                <Button onClick={clearBuild} variant="outline" size="icon">
-                  <Trash2 className="h-4 w-4" />
+                <Button onClick={clearBuild} variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10">
+                  <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </div>
             )}
@@ -387,12 +389,12 @@ export default function Optimizer() {
           {/* Right: Recommendations */}
           <div className="lg:col-span-2">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-primary" />
+              <CardHeader className="pb-2 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                  <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   Recommended Items
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   {selectedCharacter 
                     ? remainingBudget > 0 
                       ? `Affordable items for ${selectedCharacter.name} (${remainingBudget.toLocaleString()} credits left)`
@@ -401,7 +403,7 @@ export default function Optimizer() {
                   }
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
                 {/* Category Filter Tabs */}
                 <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as ItemCategory | 'all')}>
                   <TabsList className="w-full grid grid-cols-5">
@@ -437,7 +439,7 @@ export default function Optimizer() {
                     No items available within your budget{selectedCategory !== 'all' ? ` in ${selectedCategory} category` : ''}
                   </div>
                 ) : (
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                     {recommendedItems.map(item => (
                       <ItemCard
                         key={item.id}
@@ -452,17 +454,17 @@ export default function Optimizer() {
             </Card>
 
             {/* Optimization History */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-primary" />
+            <Card className="mt-4 sm:mt-6">
+              <CardHeader className="pb-2 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   Optimization History
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   Your recent optimizations (session only)
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 sm:p-6">
                 {optimizationHistory.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     No optimizations yet. Select items and add to history.

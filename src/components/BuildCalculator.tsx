@@ -189,69 +189,69 @@ export function BuildCalculator({ character, items, onRemoveItem }: BuildCalcula
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Main Stats Card */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
+        <CardHeader className="pb-2 p-3 sm:p-6 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             Build Stats
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
           {/* Cost & Efficiency */}
-          <div className="flex items-center justify-between pb-3 border-b">
+          <div className="flex items-center justify-between pb-2 sm:pb-3 border-b">
             <div className="flex items-center gap-2">
-              <Coins className="h-4 w-4 text-primary" />
-              <span className="text-sm text-muted-foreground">Total Cost</span>
+              <Coins className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+              <span className="text-xs sm:text-sm text-muted-foreground">Total Cost</span>
             </div>
-            <span className="font-mono font-bold text-lg">{stats.totalCost.toLocaleString()}</span>
+            <span className="font-mono font-bold text-base sm:text-lg">{stats.totalCost.toLocaleString()}</span>
           </div>
 
           {/* Stat Breakdown */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <div className={cn(
-              'text-center p-3 rounded-lg',
+              'text-center p-2 sm:p-3 rounded-lg',
               character?.role === 'damage' ? 'bg-role-damage/20 ring-1 ring-role-damage' : 'bg-muted'
             )}>
-              <Sword className="h-5 w-5 mx-auto mb-1 text-role-damage" />
-              <div className="font-mono font-bold text-lg text-role-damage">+{stats.totalDamage}%</div>
-              <div className="text-xs text-muted-foreground">Damage</div>
+              <Sword className="h-4 w-4 sm:h-5 sm:w-5 mx-auto mb-0.5 sm:mb-1 text-role-damage" />
+              <div className="font-mono font-bold text-sm sm:text-lg text-role-damage">+{stats.totalDamage}%</div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground">Damage</div>
             </div>
             <div className={cn(
-              'text-center p-3 rounded-lg',
+              'text-center p-2 sm:p-3 rounded-lg',
               character?.role === 'tank' ? 'bg-role-tank/20 ring-1 ring-role-tank' : 'bg-muted'
             )}>
-              <Heart className="h-5 w-5 mx-auto mb-1 text-role-support" />
-              <div className="font-mono font-bold text-lg text-role-support">+{stats.totalHealth}</div>
-              <div className="text-xs text-muted-foreground">Health</div>
+              <Heart className="h-4 w-4 sm:h-5 sm:w-5 mx-auto mb-0.5 sm:mb-1 text-role-support" />
+              <div className="font-mono font-bold text-sm sm:text-lg text-role-support">+{stats.totalHealth}</div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground">Health</div>
             </div>
             <div className={cn(
-              'text-center p-3 rounded-lg',
+              'text-center p-2 sm:p-3 rounded-lg',
               character?.role === 'support' ? 'bg-rarity-epic/20 ring-1 ring-rarity-epic' : 'bg-muted'
             )}>
-              <Sparkles className="h-5 w-5 mx-auto mb-1 text-rarity-epic" />
-              <div className="font-mono font-bold text-lg text-rarity-epic">+{stats.totalAbility}%</div>
-              <div className="text-xs text-muted-foreground">Ability</div>
+              <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 mx-auto mb-0.5 sm:mb-1 text-rarity-epic" />
+              <div className="font-mono font-bold text-sm sm:text-lg text-rarity-epic">+{stats.totalAbility}%</div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground">Ability</div>
             </div>
           </div>
 
           {/* Effective Stats with Character */}
           {character && (
-            <div className="pt-3 border-t space-y-2">
-              <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+            <div className="pt-2 sm:pt-3 border-t space-y-1.5 sm:space-y-2">
+              <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider font-semibold">
                 Effective Stats for {character.name}
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center justify-between bg-muted/50 px-3 py-2 rounded-lg">
-                  <span className="text-sm">Damage</span>
-                  <span className="font-mono font-bold">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                <div className="flex items-center justify-between bg-muted/50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg">
+                  <span className="text-xs sm:text-sm">Damage</span>
+                  <span className="font-mono font-bold text-xs sm:text-sm">
                     {character.base_damage} → <span className="text-role-damage">{stats.effectiveDamage}</span>
                   </span>
                 </div>
-                <div className="flex items-center justify-between bg-muted/50 px-3 py-2 rounded-lg">
-                  <span className="text-sm">Health</span>
-                  <span className="font-mono font-bold">
+                <div className="flex items-center justify-between bg-muted/50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg">
+                  <span className="text-xs sm:text-sm">Health</span>
+                  <span className="font-mono font-bold text-xs sm:text-sm">
                     {character.health} → <span className="text-role-support">{stats.effectiveHealth}</span>
                   </span>
                 </div>
@@ -260,14 +260,14 @@ export function BuildCalculator({ character, items, onRemoveItem }: BuildCalcula
           )}
 
           {/* Efficiency Score */}
-          <div className="pt-3 border-t">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Build Efficiency</span>
-              <span className="font-mono text-sm font-bold">{stats.efficiency} pts/1k credits</span>
+          <div className="pt-2 sm:pt-3 border-t">
+            <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+              <span className="text-xs sm:text-sm text-muted-foreground">Build Efficiency</span>
+              <span className="font-mono text-xs sm:text-sm font-bold">{stats.efficiency} pts/1k</span>
             </div>
             <Progress 
               value={Math.min(parseFloat(stats.efficiency) * 5, 100)} 
-              className="h-2"
+              className="h-1.5 sm:h-2"
             />
           </div>
         </CardContent>
@@ -276,40 +276,40 @@ export function BuildCalculator({ character, items, onRemoveItem }: BuildCalcula
       {/* Synergies Card */}
       {synergies.length > 0 && (
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Zap className="h-5 w-5 text-primary" />
+          <CardHeader className="pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Active Synergies
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2 sm:space-y-3 p-3 sm:p-6">
             {synergies.map((synergy) => (
               <div 
                 key={synergy.id}
                 className={cn(
-                  'flex items-center gap-3 p-3 rounded-lg border',
+                  'flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border',
                   synergy.count >= 3 
                     ? 'bg-gradient-to-r from-primary/20 to-transparent border-primary' 
                     : 'bg-muted/50 border-border'
                 )}
               >
-                <div className={cn('p-2 rounded-lg', SYNERGY_PATTERNS[synergy.id as keyof typeof SYNERGY_PATTERNS].bgColor)}>
+                <div className={cn('p-1.5 sm:p-2 rounded-lg', SYNERGY_PATTERNS[synergy.id as keyof typeof SYNERGY_PATTERNS].bgColor)}>
                   <span className={synergy.color}>{synergy.icon}</span>
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm">{synergy.name}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <span className="font-semibold text-xs sm:text-sm truncate">{synergy.name}</span>
                     <Badge 
                       variant={synergy.count >= 3 ? 'default' : 'secondary'}
-                      className="text-xs"
+                      className="text-[10px] sm:text-xs flex-shrink-0"
                     >
                       {synergy.count}/{synergy.maxCount}
                     </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground">{synergy.description}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{synergy.description}</p>
                 </div>
                 <span className={cn(
-                  'text-xs font-semibold',
+                  'text-[10px] sm:text-xs font-semibold flex-shrink-0',
                   synergy.count >= 3 ? 'text-primary' : 'text-muted-foreground'
                 )}>
                   {synergy.bonus}
@@ -323,9 +323,9 @@ export function BuildCalculator({ character, items, onRemoveItem }: BuildCalcula
       {/* Role Optimization Tip */}
       {roleBonus && !roleBonus.optimal && (
         <Card className="border-amber-500/50 bg-amber-500/5">
-          <CardContent className="py-3">
-            <p className="text-sm text-amber-400">
-              💡 <strong>Tip:</strong> Your {character?.role} hero benefits more from {roleBonus.label}. Consider adding more items in that category.
+          <CardContent className="py-2 sm:py-3 px-3 sm:px-6">
+            <p className="text-xs sm:text-sm text-amber-400">
+              💡 <strong>Tip:</strong> Your {character?.role} hero benefits more from {roleBonus.label}.
             </p>
           </CardContent>
         </Card>
@@ -333,50 +333,50 @@ export function BuildCalculator({ character, items, onRemoveItem }: BuildCalcula
 
       {/* Item List */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm text-muted-foreground">
+        <CardHeader className="pb-2 p-3 sm:p-6 sm:pb-2">
+          <CardTitle className="text-xs sm:text-sm text-muted-foreground">
             Selected Items ({items.length})
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
+        <CardContent className="p-3 sm:p-6">
+          <div className="space-y-1.5 sm:space-y-2">
             {items.map((item) => (
               <div 
                 key={item.id}
-                className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 group hover:bg-muted transition-colors"
+                className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-lg bg-muted/50 group hover:bg-muted transition-colors"
               >
                 {onRemoveItem && (
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    className="h-6 w-6 sm:h-7 sm:w-7 flex-shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     onClick={() => onRemoveItem(item.id)}
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </Button>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">{item.name}</div>
+                  <div className="font-medium text-xs sm:text-sm truncate">{item.name}</div>
                   {item.special_effect && (
-                    <p className="text-xs text-muted-foreground truncate">{item.special_effect}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate hidden sm:block">{item.special_effect}</p>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
+                <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground flex-shrink-0">
                   {item.damage_bonus && item.damage_bonus > 0 && (
                     <span className="flex items-center gap-0.5 text-role-damage">
-                      <Sword className="h-3 w-3" />
+                      <Sword className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                       +{item.damage_bonus}%
                     </span>
                   )}
                   {item.health_bonus && item.health_bonus > 0 && (
                     <span className="flex items-center gap-0.5 text-role-support">
-                      <Heart className="h-3 w-3" />
+                      <Heart className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                       +{item.health_bonus}
                     </span>
                   )}
                   {item.ability_power && item.ability_power > 0 && (
                     <span className="flex items-center gap-0.5 text-rarity-epic">
-                      <Sparkles className="h-3 w-3" />
+                      <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                       +{item.ability_power}%
                     </span>
                   )}

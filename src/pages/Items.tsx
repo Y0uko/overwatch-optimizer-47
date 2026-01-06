@@ -108,67 +108,67 @@ export default function Items() {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-            <Package className="h-8 w-8 text-primary" />
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="mb-4 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 flex items-center gap-2">
+            <Package className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
             Item Database
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Browse all {items.length} Stadium items with stats, costs, and special effects.
           </p>
         </div>
 
         {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-col gap-4">
+        <Card className="mb-4 sm:mb-6">
+          <CardContent className="pt-4 sm:pt-6 p-3 sm:p-6">
+            <div className="flex flex-col gap-3 sm:gap-4">
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search items by name, description, or effect..."
+                  placeholder="Search items..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-9 sm:h-10"
                 />
               </div>
 
-              {/* Category Tabs */}
+              {/* Category Tabs - Scrollable on mobile */}
               <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as ItemCategory | 'all')}>
-                <TabsList className="w-full grid grid-cols-5">
-                  <TabsTrigger value="all" className="gap-1">
-                    <Package className="h-4 w-4" />
+                <TabsList className="w-full grid grid-cols-5 h-auto">
+                  <TabsTrigger value="all" className="gap-0.5 sm:gap-1 px-1 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
+                    <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">All</span>
-                    <span className="text-xs text-muted-foreground">({categoryCounts.all})</span>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground hidden md:inline">({categoryCounts.all})</span>
                   </TabsTrigger>
-                  <TabsTrigger value="weapon" className="gap-1">
+                  <TabsTrigger value="weapon" className="gap-0.5 sm:gap-1 px-1 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
                     {categoryIcons.weapon}
                     <span className="hidden sm:inline">Weapon</span>
-                    <span className="text-xs text-muted-foreground">({categoryCounts.weapon})</span>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground hidden md:inline">({categoryCounts.weapon})</span>
                   </TabsTrigger>
-                  <TabsTrigger value="ability" className="gap-1">
+                  <TabsTrigger value="ability" className="gap-0.5 sm:gap-1 px-1 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
                     {categoryIcons.ability}
                     <span className="hidden sm:inline">Ability</span>
-                    <span className="text-xs text-muted-foreground">({categoryCounts.ability})</span>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground hidden md:inline">({categoryCounts.ability})</span>
                   </TabsTrigger>
-                  <TabsTrigger value="survival" className="gap-1">
+                  <TabsTrigger value="survival" className="gap-0.5 sm:gap-1 px-1 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
                     {categoryIcons.survival}
                     <span className="hidden sm:inline">Survival</span>
-                    <span className="text-xs text-muted-foreground">({categoryCounts.survival})</span>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground hidden md:inline">({categoryCounts.survival})</span>
                   </TabsTrigger>
-                  <TabsTrigger value="gadget" className="gap-1">
+                  <TabsTrigger value="gadget" className="gap-0.5 sm:gap-1 px-1 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
                     {categoryIcons.gadget}
                     <span className="hidden sm:inline">Gadget</span>
-                    <span className="text-xs text-muted-foreground">({categoryCounts.gadget})</span>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground hidden md:inline">({categoryCounts.gadget})</span>
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
 
               {/* Rarity & Sort */}
-              <div className="flex gap-4 flex-wrap">
+              <div className="flex gap-2 sm:gap-4 flex-wrap">
                 <Select value={selectedRarity} onValueChange={(v) => setSelectedRarity(v as ItemRarity | 'all')}>
-                  <SelectTrigger className="w-[150px]">
+                  <SelectTrigger className="w-[110px] sm:w-[150px] h-9 sm:h-10 text-xs sm:text-sm">
                     <SelectValue placeholder="Rarity" />
                   </SelectTrigger>
                   <SelectContent>
@@ -180,8 +180,8 @@ export default function Items() {
                 </Select>
 
                 <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-                  <SelectTrigger className="w-[180px]">
-                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <SelectTrigger className="w-[130px] sm:w-[180px] h-9 sm:h-10 text-xs sm:text-sm">
+                    <ArrowUpDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -195,13 +195,15 @@ export default function Items() {
                 {(searchQuery || selectedCategory !== 'all' || selectedRarity !== 'all') && (
                   <Button
                     variant="ghost"
+                    size="sm"
+                    className="h-9 sm:h-10 text-xs sm:text-sm"
                     onClick={() => {
                       setSearchQuery('');
                       setSelectedCategory('all');
                       setSelectedRarity('all');
                     }}
                   >
-                    Clear Filters
+                    Clear
                   </Button>
                 )}
               </div>
@@ -210,18 +212,18 @@ export default function Items() {
         </Card>
 
         {/* Results */}
-        <div className="mb-4 text-sm text-muted-foreground">
+        <div className="mb-3 sm:mb-4 text-xs sm:text-sm text-muted-foreground">
           Showing {filteredAndSortedItems.length} of {items.length} items
         </div>
 
         {filteredAndSortedItems.length === 0 ? (
           <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
+            <CardContent className="py-8 sm:py-12 text-center text-muted-foreground text-sm sm:text-base">
               No items match your filters. Try adjusting your search criteria.
             </CardContent>
           </Card>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {filteredAndSortedItems.map(item => (
               <ItemCard key={item.id} item={item} showStats />
             ))}
