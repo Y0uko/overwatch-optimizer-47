@@ -26,6 +26,10 @@ export interface Item {
   description: string | null;
   image_url: string | null;
   created_at: string;
+  has_weapon_lifesteal: boolean;
+  has_ability_lifesteal: boolean;
+  has_attack_speed: boolean;
+  has_max_ammo: boolean;
 }
 
 export interface UserBuild {

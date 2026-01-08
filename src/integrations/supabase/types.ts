@@ -91,6 +91,10 @@ export type Database = {
           created_at: string
           damage_bonus: number | null
           description: string | null
+          has_ability_lifesteal: boolean
+          has_attack_speed: boolean
+          has_max_ammo: boolean
+          has_weapon_lifesteal: boolean
           health_bonus: number | null
           id: string
           image_url: string | null
@@ -105,6 +109,10 @@ export type Database = {
           created_at?: string
           damage_bonus?: number | null
           description?: string | null
+          has_ability_lifesteal?: boolean
+          has_attack_speed?: boolean
+          has_max_ammo?: boolean
+          has_weapon_lifesteal?: boolean
           health_bonus?: number | null
           id?: string
           image_url?: string | null
@@ -119,6 +127,10 @@ export type Database = {
           created_at?: string
           damage_bonus?: number | null
           description?: string | null
+          has_ability_lifesteal?: boolean
+          has_attack_speed?: boolean
+          has_max_ammo?: boolean
+          has_weapon_lifesteal?: boolean
           health_bonus?: number | null
           id?: string
           image_url?: string | null

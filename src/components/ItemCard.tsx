@@ -31,7 +31,7 @@ const categoryColors: Record<ItemCategory, string> = {
 export function ItemCard({ item, selected, onSelect, showStats = true, compact = false }: ItemCardProps) {
   const [imageError, setImageError] = useState(false);
   const showFallback = !item.image_url || imageError;
-  const perks = getItemPerks(item.special_effect);
+  const perks = getItemPerks(item);
 
   return (
     <Card 

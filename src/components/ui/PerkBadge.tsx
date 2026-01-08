@@ -49,31 +49,20 @@ export function PerkBadge({ perk, className }: PerkBadgeProps) {
   );
 }
 
-export function getItemPerks(specialEffect: string | null): PerkType[] {
-  if (!specialEffect) return [];
-  
+export interface ItemPerks {
+  has_weapon_lifesteal?: boolean;
+  has_ability_lifesteal?: boolean;
+  has_attack_speed?: boolean;
+  has_max_ammo?: boolean;
+}
+
+export function getItemPerks(item: ItemPerks): PerkType[] {
   const perks: PerkType[] = [];
-  const effect = specialEffect.toLowerCase();
   
-  // Check for weapon lifesteal
-  if (effect.includes('weapon lifesteal') || effect.includes('weapon life steal')) {
-    perks.push('weapon-lifesteal');
-  }
-  
-  // Check for ability lifesteal
-  if (effect.includes('ability lifesteal') || effect.includes('ability life steal')) {
-    perks.push('ability-lifesteal');
-  }
-  
-  // Check for attack speed
-  if (effect.includes('attack speed')) {
-    perks.push('attack-speed');
-  }
-  
-  // Check for max ammo
-  if (effect.includes('max ammo') || effect.includes('ammo')) {
-    perks.push('max-ammo');
-  }
+  if (item.has_weapon_lifesteal) perks.push('weapon-lifesteal');
+  if (item.has_ability_lifesteal) perks.push('ability-lifesteal');
+  if (item.has_attack_speed) perks.push('attack-speed');
+  if (item.has_max_ammo) perks.push('max-ammo');
   
   return perks;
 }
