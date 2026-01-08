@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { Zap, LogOut, Menu, X, Moon, Sun, Globe } from 'lucide-react';
+import { Zap, LogOut, Menu, X, Moon, Sun, Globe, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import {
   DropdownMenu,
@@ -84,12 +84,21 @@ export function Header() {
               Items
             </Link>
             {user && (
-              <Link 
-                to="/builds" 
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                My Builds
-              </Link>
+              <>
+                <Link 
+                  to="/builds" 
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  My Builds
+                </Link>
+                <Link 
+                  to="/admin" 
+                  className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  <Settings className="h-4 w-4" />
+                  Admin
+                </Link>
+              </>
             )}
           </nav>
 
@@ -173,13 +182,23 @@ export function Header() {
                 Items
               </Link>
               {user && (
-                <Link 
-                  to="/builds" 
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  My Builds
-                </Link>
+                <>
+                  <Link 
+                    to="/builds" 
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    My Builds
+                  </Link>
+                  <Link 
+                    to="/admin" 
+                    className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Settings className="h-4 w-4" />
+                    Admin
+                  </Link>
+                </>
               )}
               <div className="pt-4 border-t border-border flex flex-col gap-2">
                 {/* Mobile Language Selector */}
