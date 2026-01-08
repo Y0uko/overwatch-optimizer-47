@@ -11,7 +11,7 @@ import { CharacterCard } from '@/components/CharacterCard';
 import { BuildCalculator } from '@/components/BuildCalculator';
 import { supabase } from '@/integrations/supabase/client';
 import { Character, Item, ItemCategory } from '@/types/database';
-import { Calculator, Coins, Zap, History, Clock, Loader2, Sword, Sparkles, Shield, Wrench, Package, X, Trash2 } from 'lucide-react';
+import { Calculator, Coins, Zap, History, Clock, Loader2, Sword, Sparkles, Shield, Wrench, Package, X, Trash2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const categoryIcons: Record<ItemCategory | 'all', React.ReactNode> = {
@@ -201,15 +201,13 @@ export default function Optimizer() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Left: Configuration */}
           <div className="space-y-4 sm:space-y-6">
-            <Card>
-              <CardHeader className="pb-2 sm:pb-4">
-                <CardTitle className="text-base sm:text-lg">Configuration</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
-                {/* Character Selection by Role - Scrollable on mobile */}
-                <div className="space-y-2 sm:space-y-3">
-                  <Label className="text-sm">Select Character</Label>
-                  
+            {/* Character Selection - shown when no character selected */}
+            {!selectedCharacter ? (
+              <Card>
+                <CardHeader className="pb-2 sm:pb-4">
+                  <CardTitle className="text-base sm:text-lg">Select Character</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
                   {/* Tanks */}
                   <div className="space-y-1.5 sm:space-y-2">
                     <div className="text-xs font-semibold text-role-tank uppercase tracking-wider">Tank</div>
@@ -218,11 +216,7 @@ export default function Optimizer() {
                         <button
                           key={char.id}
                           onClick={() => setSelectedCharacter(char)}
-                          className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-all hover:scale-105 ${
-                            selectedCharacter?.id === char.id 
-                              ? 'border-role-tank bg-role-tank/20 ring-2 ring-role-tank' 
-                              : 'border-border hover:border-role-tank/50 bg-muted/50'
-                          }`}
+                          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-all hover:scale-105 border-border hover:border-role-tank/50 bg-muted/50"
                         >
                           {char.image_url && (
                             <img 
@@ -245,11 +239,7 @@ export default function Optimizer() {
                         <button
                           key={char.id}
                           onClick={() => setSelectedCharacter(char)}
-                          className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-all hover:scale-105 ${
-                            selectedCharacter?.id === char.id 
-                              ? 'border-role-damage bg-role-damage/20 ring-2 ring-role-damage' 
-                              : 'border-border hover:border-role-damage/50 bg-muted/50'
-                          }`}
+                          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-all hover:scale-105 border-border hover:border-role-damage/50 bg-muted/50"
                         >
                           {char.image_url && (
                             <img 
@@ -272,11 +262,7 @@ export default function Optimizer() {
                         <button
                           key={char.id}
                           onClick={() => setSelectedCharacter(char)}
-                          className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-all hover:scale-105 ${
-                            selectedCharacter?.id === char.id 
-                              ? 'border-role-support bg-role-support/20 ring-2 ring-role-support' 
-                              : 'border-border hover:border-role-support/50 bg-muted/50'
-                          }`}
+                          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-all hover:scale-105 border-border hover:border-role-support/50 bg-muted/50"
                         >
                           {char.image_url && (
                             <img 
@@ -290,99 +276,164 @@ export default function Optimizer() {
                       ))}
                     </div>
                   </div>
-                </div>
-
-                <div className="space-y-1.5 sm:space-y-2">
-                  <Label className="text-sm">Current Round</Label>
-                  <div className="flex gap-0.5 sm:gap-1">
-                    {[1, 2, 3, 4, 5, 6, 7].map(r => (
-                      <button
-                        key={r}
-                        onClick={() => setRound(r)}
-                        className={`flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg font-bold text-xs sm:text-sm transition-all ${
-                          round === r
-                            ? 'bg-primary text-primary-foreground ring-2 ring-primary'
-                            : 'bg-muted hover:bg-muted/80 text-foreground'
-                        }`}
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Selected Character with Change Button */}
+                <Card>
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-center gap-3">
+                      {selectedCharacter.image_url && (
+                        <img 
+                          src={selectedCharacter.image_url} 
+                          alt={selectedCharacter.name}
+                          className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover ring-2 ring-primary"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-lg sm:text-xl">{selectedCharacter.name}</h3>
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                          <span className={`capitalize ${
+                            selectedCharacter.role === 'damage' ? 'text-role-damage' :
+                            selectedCharacter.role === 'tank' ? 'text-role-tank' : 'text-role-support'
+                          }`}>
+                            {selectedCharacter.role}
+                          </span>
+                          <span>•</span>
+                          <span>HP: {selectedCharacter.health}</span>
+                          <span>•</span>
+                          <span>DMG: {selectedCharacter.base_damage}</span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedCharacter(null);
+                          setSelectedItems([]);
+                        }}
+                        className="gap-1.5"
                       >
-                        {r}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Change</span>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                <div className="space-y-1.5 sm:space-y-2">
-                  <Label htmlFor="budget" className="text-sm">Budget (Credits)</Label>
-                  <div className="relative">
-                    <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="budget"
-                      type="number"
-                      min={0}
-                      step={500}
-                      value={budget}
-                      onChange={(e) => setBudget(parseInt(e.target.value) || 0)}
-                      className="pl-10 h-9 sm:h-10"
-                    />
-                  </div>
-                  
-                  {/* Budget Status */}
-                  <div className="mt-2 sm:mt-3 p-2 sm:p-3 rounded-lg bg-muted/50 border">
-                    <div className="flex justify-between text-xs sm:text-sm mb-1.5 sm:mb-2">
-                      <span className="text-muted-foreground">Spent</span>
-                      <span className="font-mono font-medium">{totalCost.toLocaleString()}</span>
+                {/* Budget & Round Configuration */}
+                <Card>
+                  <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4">
+                    <div className="space-y-1.5 sm:space-y-2">
+                      <Label className="text-sm">Current Round</Label>
+                      <div className="flex gap-0.5 sm:gap-1">
+                        {[1, 2, 3, 4, 5, 6, 7].map(r => (
+                          <button
+                            key={r}
+                            onClick={() => setRound(r)}
+                            className={`flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg font-bold text-xs sm:text-sm transition-all ${
+                              round === r
+                                ? 'bg-primary text-primary-foreground ring-2 ring-primary'
+                                : 'bg-muted hover:bg-muted/80 text-foreground'
+                            }`}
+                          >
+                            {r}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex justify-between text-xs sm:text-sm mb-1.5 sm:mb-2">
-                      <span className="text-muted-foreground">Remaining</span>
-                      <span className={`font-mono font-medium ${remainingBudget < 0 ? 'text-destructive' : 'text-primary'}`}>
-                        {remainingBudget.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-1.5 sm:h-2 overflow-hidden">
-                      <div 
-                        className={`h-full transition-all ${remainingBudget < 0 ? 'bg-destructive' : 'bg-primary'}`}
-                        style={{ width: `${Math.min(100, (totalCost / budget) * 100)}%` }}
-                      />
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1 text-center">
-                      {selectedItems.length}/6 items selected
-                    </div>
-                  </div>
-                </div>
 
-                {/* Apply Optimal Build Button */}
-                {selectedCharacter && optimalBuild.length > 0 && (
-                  <Button 
-                    onClick={() => setSelectedItems(optimalBuild)}
-                    variant="secondary"
-                    className="w-full gap-2 h-9 sm:h-10 text-xs sm:text-sm"
-                  >
-                    <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    <span className="hidden sm:inline">Apply Optimal Build ({optimalBuild.reduce((sum, i) => sum + i.cost, 0).toLocaleString()} credits)</span>
-                    <span className="sm:hidden">Optimal ({optimalBuild.reduce((sum, i) => sum + i.cost, 0).toLocaleString()})</span>
-                  </Button>
+                    <div className="space-y-1.5 sm:space-y-2">
+                      <Label htmlFor="budget" className="text-sm">Budget (Credits)</Label>
+                      <div className="relative">
+                        <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="budget"
+                          type="number"
+                          min={0}
+                          step={500}
+                          value={budget}
+                          onChange={(e) => setBudget(parseInt(e.target.value) || 0)}
+                          className="pl-10 h-9 sm:h-10"
+                        />
+                      </div>
+                      
+                      {/* Budget Status */}
+                      <div className="mt-2 sm:mt-3 p-2 sm:p-3 rounded-lg bg-muted/50 border">
+                        <div className="flex justify-between text-xs sm:text-sm mb-1.5 sm:mb-2">
+                          <span className="text-muted-foreground">Spent</span>
+                          <span className="font-mono font-medium">{totalCost.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-xs sm:text-sm mb-1.5 sm:mb-2">
+                          <span className="text-muted-foreground">Remaining</span>
+                          <span className={`font-mono font-medium ${remainingBudget < 0 ? 'text-destructive' : 'text-primary'}`}>
+                            {remainingBudget.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-1.5 sm:h-2 overflow-hidden">
+                          <div 
+                            className={`h-full transition-all ${remainingBudget < 0 ? 'bg-destructive' : 'bg-primary'}`}
+                            style={{ width: `${Math.min(100, (totalCost / budget) * 100)}%` }}
+                          />
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1 text-center">
+                          {selectedItems.length}/6 items selected
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Apply Optimal Build Button with Item Icons */}
+                    {optimalBuild.length > 0 && (
+                      <div className="space-y-2">
+                        <Button 
+                          onClick={() => setSelectedItems(optimalBuild)}
+                          variant="secondary"
+                          className="w-full gap-2 h-9 sm:h-10 text-xs sm:text-sm"
+                        >
+                          <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          <span className="hidden sm:inline">Apply Optimal Build ({optimalBuild.reduce((sum, i) => sum + i.cost, 0).toLocaleString()} credits)</span>
+                          <span className="sm:hidden">Optimal ({optimalBuild.reduce((sum, i) => sum + i.cost, 0).toLocaleString()})</span>
+                        </Button>
+                        {/* Optimal Build Item Icons */}
+                        <div className="flex flex-wrap gap-1.5 justify-center">
+                          {optimalBuild.map(item => (
+                            <div 
+                              key={item.id}
+                              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-muted border border-border"
+                              title={item.name}
+                            >
+                              {item.image_url ? (
+                                <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  {categoryIcons[item.category]}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Build Calculator */}
+                <BuildCalculator character={selectedCharacter} items={selectedItems} onRemoveItem={removeItem} />
+                
+                {selectedItems.length > 0 && (
+                  <div className="flex gap-2">
+                    <Button onClick={addToHistory} className="flex-1 gap-2 h-9 sm:h-10 text-xs sm:text-sm">
+                      <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">Save to History</span>
+                      <span className="sm:hidden">Save</span>
+                    </Button>
+                    <Button onClick={clearBuild} variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10">
+                      <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </Button>
+                  </div>
                 )}
-              </CardContent>
-            </Card>
-
-            {selectedCharacter && (
-              <CharacterCard character={selectedCharacter} />
-            )}
-
-            {/* Build Calculator */}
-            <BuildCalculator character={selectedCharacter} items={selectedItems} onRemoveItem={removeItem} />
-            
-            {selectedItems.length > 0 && (
-              <div className="flex gap-2">
-                <Button onClick={addToHistory} className="flex-1 gap-2 h-9 sm:h-10 text-xs sm:text-sm">
-                  <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Save to History</span>
-                  <span className="sm:hidden">Save</span>
-                </Button>
-                <Button onClick={clearBuild} variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10">
-                  <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                </Button>
-              </div>
+              </>
             )}
           </div>
 

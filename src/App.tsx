@@ -10,6 +10,7 @@ import Optimizer from "./pages/Optimizer";
 import Characters from "./pages/Characters";
 import Builds from "./pages/Builds";
 import Items from "./pages/Items";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/characters" element={<Characters />} />
             <Route path="/builds" element={<Builds />} />
             <Route path="/items" element={<Items />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
