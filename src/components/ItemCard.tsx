@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Item, ItemCategory } from '@/types/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { RarityBadge } from '@/components/ui/RarityBadge';
+import { PerkBadge, getItemPerks } from '@/components/ui/PerkBadge';
 import { Coins, Sword, Heart, Sparkles, Shield, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -30,6 +31,7 @@ const categoryColors: Record<ItemCategory, string> = {
 export function ItemCard({ item, selected, onSelect, showStats = true, compact = false }: ItemCardProps) {
   const [imageError, setImageError] = useState(false);
   const showFallback = !item.image_url || imageError;
+  const perks = getItemPerks(item.special_effect);
 
   return (
     <Card 
@@ -71,6 +73,15 @@ export function ItemCard({ item, selected, onSelect, showStats = true, compact =
             </div>
           </div>
         </div>
+
+        {/* Perk Badges */}
+        {perks.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-1.5 sm:mb-2">
+            {perks.map((perk) => (
+              <PerkBadge key={perk} perk={perk} />
+            ))}
+          </div>
+        )}
 
         {showStats && (
           <div className="flex flex-wrap gap-1 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground">
