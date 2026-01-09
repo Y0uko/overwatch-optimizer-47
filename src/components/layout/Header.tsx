@@ -1,7 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { Zap, LogOut, Menu, X, Moon, Sun, Globe, Settings } from 'lucide-react';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { Zap, LogOut, Menu, X, Moon, Sun, Settings, User, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import {
   DropdownMenu,
@@ -23,6 +24,7 @@ const languages = [
 
 export function Header() {
   const { user, signOut, loading } = useAuth();
+  const { t, currentLang, setLanguage, isTranslating } = useTranslation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
@@ -30,12 +32,6 @@ export function Header() {
       return document.documentElement.classList.contains('dark');
     }
     return true;
-  });
-  const [currentLang, setCurrentLang] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('language') || 'en';
-    }
-    return 'en';
   });
 
   useEffect(() => {
@@ -49,8 +45,7 @@ export function Header() {
   }, [darkMode]);
 
   const handleLanguageChange = (langCode: string) => {
-    setCurrentLang(langCode);
-    localStorage.setItem('language', langCode);
+    setLanguage(langCode);
   };
 
   const handleSignOut = async () => {
@@ -75,13 +70,13 @@ export function Header() {
               to="/optimizer" 
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Optimizer
+              {t('nav.optimizer')}
             </Link>
             <Link 
               to="/items" 
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Items
+              {t('nav.items')}
             </Link>
             {user && (
               <>
@@ -89,14 +84,14 @@ export function Header() {
                   to="/builds" 
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  My Builds
+                  {t('nav.myBuilds')}
                 </Link>
                 <Link 
                   to="/admin" 
                   className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                 >
                   <Settings className="h-4 w-4" />
-                  Admin
+                  {t('nav.admin')}
                 </Link>
               </>
             )}
@@ -107,8 +102,12 @@ export function Header() {
             {/* Language Selector */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <span className="text-lg">{currentLanguage.flag}</span>
+                <Button variant="ghost" size="sm" className="gap-2" disabled={isTranslating}>
+                  {isTranslating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <span className="text-lg">{currentLanguage.flag}</span>
+                  )}
                   <span className="text-sm">{currentLanguage.code.toUpperCase()}</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -138,16 +137,21 @@ export function Header() {
               <div className="h-9 w-20 bg-muted animate-pulse rounded-md" />
             ) : user ? (
               <>
-                <span className="text-sm text-muted-foreground">
-                  {user.email?.split('@')[0]}
-                </span>
+                <Link to="/profile">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <User className="h-4 w-4" />
+                    <span className="text-sm text-muted-foreground">
+                      {user.email?.split('@')[0]}
+                    </span>
+                  </Button>
+                </Link>
                 <Button variant="ghost" size="icon" onClick={handleSignOut}>
                   <LogOut className="h-4 w-4" />
                 </Button>
               </>
             ) : (
               <Link to="/auth">
-                <Button>Sign In</Button>
+                <Button>{t('nav.signIn')}</Button>
               </Link>
             )}
           </div>
@@ -172,14 +176,14 @@ export function Header() {
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Optimizer
+                {t('nav.optimizer')}
               </Link>
               <Link 
                 to="/items" 
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Items
+                {t('nav.items')}
               </Link>
               {user && (
                 <>
@@ -188,7 +192,7 @@ export function Header() {
                     className="text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    My Builds
+                    {t('nav.myBuilds')}
                   </Link>
                   <Link 
                     to="/admin" 
@@ -196,7 +200,15 @@ export function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Settings className="h-4 w-4" />
-                    Admin
+                    {t('nav.admin')}
+                  </Link>
+                  <Link 
+                    to="/profile" 
+                    className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <User className="h-4 w-4" />
+                    {t('nav.profile')}
                   </Link>
                 </>
               )}
@@ -204,8 +216,12 @@ export function Header() {
                 {/* Mobile Language Selector */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start gap-2">
-                      <span className="text-lg">{currentLanguage.flag}</span>
+                    <Button variant="outline" className="w-full justify-start gap-2" disabled={isTranslating}>
+                      {isTranslating ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <span className="text-lg">{currentLanguage.flag}</span>
+                      )}
                       <span>{currentLanguage.name}</span>
                     </Button>
                   </DropdownMenuTrigger>
@@ -229,16 +245,16 @@ export function Header() {
                   className="w-full"
                 >
                   {darkMode ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
-                  {darkMode ? 'Light Mode' : 'Dark Mode'}
+                  {darkMode ? t('nav.lightMode') : t('nav.darkMode')}
                 </Button>
                 {user ? (
                   <Button variant="outline" onClick={handleSignOut} className="w-full">
                     <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
+                    {t('nav.signOut')}
                   </Button>
                 ) : (
                   <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                    <Button className="w-full">Sign In</Button>
+                    <Button className="w-full">{t('nav.signIn')}</Button>
                   </Link>
                 )}
               </div>
