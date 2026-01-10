@@ -6,14 +6,21 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
-import { Item } from '@/types/database';
-import { Settings, Search, Save, Loader2, Package, AlertCircle } from 'lucide-react';
+import { Item, ItemCategory, ItemRarity } from '@/types/database';
+import { Settings, Search, Save, Loader2, Package, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PerkBadge, PerkType } from '@/components/ui/PerkBadge';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type PendingChanges = {
-  [itemId: string]: Partial<Pick<Item, 'cost' | 'description' | 'has_weapon_lifesteal' | 'has_ability_lifesteal' | 'has_attack_speed' | 'has_max_ammo'>>;
+  [itemId: string]: Partial<Item>;
 };
 
 export default function Admin() {
@@ -22,6 +29,7 @@ export default function Admin() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [pendingChanges, setPendingChanges] = useState<PendingChanges>({});
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -41,7 +49,7 @@ export default function Admin() {
     fetchItems();
   }, [toast]);
 
-  const updateLocalValue = (itemId: string, field: keyof PendingChanges[string], value: string | number | boolean) => {
+  const updateLocalValue = (itemId: string, field: keyof Item, value: string | number | boolean | null) => {
     setPendingChanges(prev => ({
       ...prev,
       [itemId]: {
@@ -57,6 +65,18 @@ export default function Admin() {
       return pending[field as keyof typeof pending] as Item[K];
     }
     return item[field];
+  };
+
+  const toggleExpanded = (itemId: string) => {
+    setExpandedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
   };
 
   const hasChanges = Object.keys(pendingChanges).length > 0;
@@ -121,6 +141,9 @@ export default function Admin() {
     { key: 'has_max_ammo', perkType: 'max-ammo', label: 'Ammo' },
   ];
 
+  const categories: ItemCategory[] = ['weapon', 'ability', 'survival', 'gadget'];
+  const rarities: ItemRarity[] = ['common', 'rare', 'epic'];
+
   if (loading) {
     return (
       <Layout>
@@ -140,7 +163,7 @@ export default function Admin() {
             Admin - Item Manager
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Manage item perks, prices, and descriptions. Changes are saved in bulk.
+            Manage all item properties. Click an item to expand and edit all fields.
           </p>
         </div>
 
@@ -214,6 +237,7 @@ export default function Admin() {
               <div className="space-y-2">
                 {filteredItems.map(item => {
                   const isModified = !!pendingChanges[item.id];
+                  const isExpanded = expandedItems.has(item.id);
                   
                   return (
                     <div 
@@ -224,28 +248,45 @@ export default function Admin() {
                           : 'bg-card hover:bg-muted/50'
                       }`}
                     >
+                      {/* Main Row */}
                       <div className="flex items-center gap-3">
+                        {/* Expand Button */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 flex-shrink-0"
+                          onClick={() => toggleExpanded(item.id)}
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+
                         {/* Item Image */}
                         <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-muted flex items-center justify-center">
-                          {item.image_url ? (
-                            <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                          {getDisplayValue(item, 'image_url') ? (
+                            <img src={getDisplayValue(item, 'image_url') || ''} alt={item.name} className="w-full h-full object-cover" />
                           ) : (
                             <Package className="h-5 w-5 text-muted-foreground" />
                           )}
                         </div>
 
-                        {/* Item Name & Modified Badge */}
+                        {/* Item Name Input */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm truncate">{item.name}</span>
+                            <Input
+                              value={getDisplayValue(item, 'name')}
+                              onChange={(e) => updateLocalValue(item.id, 'name', e.target.value)}
+                              className="h-8 text-sm font-medium"
+                              placeholder="Item name"
+                            />
                             {isModified && (
-                              <Badge variant="outline" className="text-[10px] px-1 py-0 border-primary text-primary">
+                              <Badge variant="outline" className="text-[10px] px-1 py-0 border-primary text-primary flex-shrink-0">
                                 Modified
                               </Badge>
                             )}
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {item.special_effect || 'No special effect'}
                           </div>
                         </div>
 
@@ -277,16 +318,114 @@ export default function Admin() {
                         </div>
                       </div>
 
-                      {/* Description Input */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Desc:</span>
-                        <Input
-                          value={getDisplayValue(item, 'description') || ''}
-                          onChange={(e) => updateLocalValue(item.id, 'description', e.target.value)}
-                          placeholder="Item description..."
-                          className="h-8 text-sm"
-                        />
-                      </div>
+                      {/* Expanded Details */}
+                      {isExpanded && (
+                        <div className="ml-11 space-y-3 pt-2 border-t border-border/50">
+                          {/* Category & Rarity */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-xs text-muted-foreground">Category</label>
+                              <Select
+                                value={getDisplayValue(item, 'category')}
+                                onValueChange={(value) => updateLocalValue(item.id, 'category', value as ItemCategory)}
+                              >
+                                <SelectTrigger className="h-8 text-sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {categories.map(cat => (
+                                    <SelectItem key={cat} value={cat} className="capitalize">
+                                      {cat}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs text-muted-foreground">Rarity</label>
+                              <Select
+                                value={getDisplayValue(item, 'rarity')}
+                                onValueChange={(value) => updateLocalValue(item.id, 'rarity', value as ItemRarity)}
+                              >
+                                <SelectTrigger className="h-8 text-sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {rarities.map(rar => (
+                                    <SelectItem key={rar} value={rar} className="capitalize">
+                                      {rar}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          {/* Stats */}
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-xs text-muted-foreground">Damage Bonus</label>
+                              <Input
+                                type="number"
+                                value={getDisplayValue(item, 'damage_bonus') ?? 0}
+                                onChange={(e) => updateLocalValue(item.id, 'damage_bonus', parseInt(e.target.value) || 0)}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs text-muted-foreground">Health Bonus</label>
+                              <Input
+                                type="number"
+                                value={getDisplayValue(item, 'health_bonus') ?? 0}
+                                onChange={(e) => updateLocalValue(item.id, 'health_bonus', parseInt(e.target.value) || 0)}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs text-muted-foreground">Ability Power</label>
+                              <Input
+                                type="number"
+                                value={getDisplayValue(item, 'ability_power') ?? 0}
+                                onChange={(e) => updateLocalValue(item.id, 'ability_power', parseInt(e.target.value) || 0)}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Image URL */}
+                          <div className="space-y-1">
+                            <label className="text-xs text-muted-foreground">Image URL</label>
+                            <Input
+                              value={getDisplayValue(item, 'image_url') || ''}
+                              onChange={(e) => updateLocalValue(item.id, 'image_url', e.target.value || null)}
+                              placeholder="https://example.com/image.png"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+
+                          {/* Description */}
+                          <div className="space-y-1">
+                            <label className="text-xs text-muted-foreground">Description</label>
+                            <Input
+                              value={getDisplayValue(item, 'description') || ''}
+                              onChange={(e) => updateLocalValue(item.id, 'description', e.target.value)}
+                              placeholder="Item description..."
+                              className="h-8 text-sm"
+                            />
+                          </div>
+
+                          {/* Special Effect */}
+                          <div className="space-y-1">
+                            <label className="text-xs text-muted-foreground">Special Effect</label>
+                            <Input
+                              value={getDisplayValue(item, 'special_effect') || ''}
+                              onChange={(e) => updateLocalValue(item.id, 'special_effect', e.target.value)}
+                              placeholder="Special effect description..."
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
