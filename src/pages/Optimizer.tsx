@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Character, Item, ItemCategory } from '@/types/database';
 import { Calculator, Coins, Zap, History, Clock, Loader2, Sword, Sparkles, Shield, Wrench, Package, X, Trash2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 const categoryIcons: Record<ItemCategory | 'all', React.ReactNode> = {
   all: <Package className="h-4 w-4" />,
@@ -127,17 +128,19 @@ export default function Optimizer() {
       .slice(0, 12);
   }, [items, selectedCharacter, remainingBudget, selectedCategory, selectedItems]);
 
+  const { t } = useTranslation();
+
   const toggleItem = (item: Item) => {
     if (selectedItems.find(i => i.id === item.id)) {
       setSelectedItems(selectedItems.filter(i => i.id !== item.id));
     } else {
       // Check if we can afford and haven't hit item limit
       if (selectedItems.length >= 6) {
-        toast({ title: 'Maximum 6 items', description: 'Remove an item to add a new one', variant: 'destructive' });
+        toast({ title: t('optimizer.maxItems'), description: t('optimizer.removeItemToAdd'), variant: 'destructive' });
         return;
       }
       if (item.cost > remainingBudget) {
-        toast({ title: 'Not enough budget', description: `Need ${item.cost - remainingBudget} more credits`, variant: 'destructive' });
+        toast({ title: t('optimizer.notEnoughBudget'), description: `${t('optimizer.needMore')} ${item.cost - remainingBudget} ${t('optimizer.moreCredits')}`, variant: 'destructive' });
         return;
       }
       setSelectedItems([...selectedItems, item]);
@@ -150,7 +153,7 @@ export default function Optimizer() {
 
   const clearBuild = () => {
     setSelectedItems([]);
-    toast({ title: 'Build cleared' });
+    toast({ title: t('optimizer.buildCleared') });
   };
 
   // totalCost already calculated above
@@ -167,7 +170,7 @@ export default function Optimizer() {
     };
     
     setOptimizationHistory(prev => [newEntry, ...prev.slice(0, 9)]); // Keep last 10
-    toast({ title: 'Added to history!' });
+    toast({ title: t('optimizer.addedToHistory') });
   };
 
   const loadFromHistory = (entry: typeof optimizationHistory[0]) => {
@@ -191,10 +194,10 @@ export default function Optimizer() {
         <div className="mb-4 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 flex items-center gap-2">
             <Calculator className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-            Item Optimizer
+            {t('optimizer.title')}
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Select your hero, set your budget, and get optimal item recommendations.
+            {t('optimizer.subtitle')}
           </p>
         </div>
 
@@ -205,12 +208,12 @@ export default function Optimizer() {
             {!selectedCharacter ? (
               <Card>
                 <CardHeader className="pb-2 sm:pb-4">
-                  <CardTitle className="text-base sm:text-lg">Select Character</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">{t('optimizer.selectCharacter')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
                   {/* Tanks */}
                   <div className="space-y-1.5 sm:space-y-2">
-                    <div className="text-xs font-semibold text-role-tank uppercase tracking-wider">Tank</div>
+                    <div className="text-xs font-semibold text-role-tank uppercase tracking-wider">{t('optimizer.tank')}</div>
                     <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {characters.filter(c => c.role === 'tank').map(char => (
                         <button
@@ -233,7 +236,7 @@ export default function Optimizer() {
 
                   {/* Damage */}
                   <div className="space-y-1.5 sm:space-y-2">
-                    <div className="text-xs font-semibold text-role-damage uppercase tracking-wider">Damage</div>
+                    <div className="text-xs font-semibold text-role-damage uppercase tracking-wider">{t('optimizer.damage')}</div>
                     <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {characters.filter(c => c.role === 'damage').map(char => (
                         <button
@@ -256,7 +259,7 @@ export default function Optimizer() {
 
                   {/* Support */}
                   <div className="space-y-1.5 sm:space-y-2">
-                    <div className="text-xs font-semibold text-role-support uppercase tracking-wider">Support</div>
+                    <div className="text-xs font-semibold text-role-support uppercase tracking-wider">{t('optimizer.support')}</div>
                     <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {characters.filter(c => c.role === 'support').map(char => (
                         <button
@@ -316,7 +319,7 @@ export default function Optimizer() {
                         className="gap-1.5"
                       >
                         <RefreshCw className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Change</span>
+                        <span className="hidden sm:inline">{t('optimizer.changeHero')}</span>
                       </Button>
                     </div>
                   </CardContent>
@@ -326,7 +329,7 @@ export default function Optimizer() {
                 <Card>
                   <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4">
                     <div className="space-y-1.5 sm:space-y-2">
-                      <Label className="text-sm">Current Round</Label>
+                      <Label className="text-sm">{t('optimizer.currentRound')}</Label>
                       <div className="flex gap-0.5 sm:gap-1">
                         {[1, 2, 3, 4, 5, 6, 7].map(r => (
                           <button
@@ -345,7 +348,7 @@ export default function Optimizer() {
                     </div>
 
                     <div className="space-y-1.5 sm:space-y-2">
-                      <Label htmlFor="budget" className="text-sm">Budget (Credits)</Label>
+                      <Label htmlFor="budget" className="text-sm">{t('optimizer.budget')}</Label>
                       <div className="relative">
                         <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -362,11 +365,11 @@ export default function Optimizer() {
                       {/* Budget Status */}
                       <div className="mt-2 sm:mt-3 p-2 sm:p-3 rounded-lg bg-muted/50 border">
                         <div className="flex justify-between text-xs sm:text-sm mb-1.5 sm:mb-2">
-                          <span className="text-muted-foreground">Spent</span>
+                          <span className="text-muted-foreground">{t('optimizer.spent')}</span>
                           <span className="font-mono font-medium">{totalCost.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between text-xs sm:text-sm mb-1.5 sm:mb-2">
-                          <span className="text-muted-foreground">Remaining</span>
+                          <span className="text-muted-foreground">{t('optimizer.remaining')}</span>
                           <span className={`font-mono font-medium ${remainingBudget < 0 ? 'text-destructive' : 'text-primary'}`}>
                             {remainingBudget.toLocaleString()}
                           </span>
@@ -378,7 +381,7 @@ export default function Optimizer() {
                           />
                         </div>
                         <div className="text-xs text-muted-foreground mt-1 text-center">
-                          {selectedItems.length}/6 items selected
+                          {selectedItems.length}/6 {t('optimizer.itemsSelected')}
                         </div>
                       </div>
                     </div>
@@ -392,8 +395,8 @@ export default function Optimizer() {
                           className="w-full gap-2 h-9 sm:h-10 text-xs sm:text-sm"
                         >
                           <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          <span className="hidden sm:inline">Apply Optimal Build ({optimalBuild.reduce((sum, i) => sum + i.cost, 0).toLocaleString()} credits)</span>
-                          <span className="sm:hidden">Optimal ({optimalBuild.reduce((sum, i) => sum + i.cost, 0).toLocaleString()})</span>
+                          <span className="hidden sm:inline">{t('optimizer.applyOptimalBuild')} ({optimalBuild.reduce((sum, i) => sum + i.cost, 0).toLocaleString()} {t('optimizer.credits')})</span>
+                          <span className="sm:hidden">{t('optimizer.optimal')} ({optimalBuild.reduce((sum, i) => sum + i.cost, 0).toLocaleString()})</span>
                         </Button>
                         {/* Optimal Build Item Icons */}
                         <div className="flex flex-wrap gap-1.5 justify-center">
@@ -425,8 +428,8 @@ export default function Optimizer() {
                   <div className="flex gap-2">
                     <Button onClick={addToHistory} className="flex-1 gap-2 h-9 sm:h-10 text-xs sm:text-sm">
                       <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      <span className="hidden sm:inline">Save to History</span>
-                      <span className="sm:hidden">Save</span>
+                      <span className="hidden sm:inline">{t('optimizer.saveToHistory')}</span>
+                      <span className="sm:hidden">{t('optimizer.save')}</span>
                     </Button>
                     <Button onClick={clearBuild} variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10">
                       <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -443,14 +446,14 @@ export default function Optimizer() {
               <CardHeader className="pb-2 sm:pb-4">
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                  Recommended Items
+                  {t('optimizer.recommendedItems')}
                 </CardTitle>
                 <CardDescription className="text-xs sm:text-sm">
                   {selectedCharacter 
                     ? remainingBudget > 0 
-                      ? `Affordable items for ${selectedCharacter.name} (${remainingBudget.toLocaleString()} credits left)`
-                      : `No budget remaining - remove items to see more options`
-                    : 'Select a character to see recommendations'
+                      ? `${t('optimizer.affordableItems')} ${selectedCharacter.name} (${remainingBudget.toLocaleString()} ${t('optimizer.creditsLeft')})`
+                      : t('optimizer.noBudgetRemaining')
+                    : t('optimizer.selectCharacterToSee')
                   }
                 </CardDescription>
               </CardHeader>
@@ -460,34 +463,34 @@ export default function Optimizer() {
                   <TabsList className="w-full grid grid-cols-5">
                     <TabsTrigger value="all" className="gap-1">
                       {categoryIcons.all}
-                      <span className="hidden sm:inline">All</span>
+                      <span className="hidden sm:inline">{t('items.all')}</span>
                     </TabsTrigger>
                     <TabsTrigger value="weapon" className="gap-1">
                       {categoryIcons.weapon}
-                      <span className="hidden sm:inline">Weapon</span>
+                      <span className="hidden sm:inline">{t('items.weapon')}</span>
                     </TabsTrigger>
                     <TabsTrigger value="ability" className="gap-1">
                       {categoryIcons.ability}
-                      <span className="hidden sm:inline">Ability</span>
+                      <span className="hidden sm:inline">{t('items.ability')}</span>
                     </TabsTrigger>
                     <TabsTrigger value="survival" className="gap-1">
                       {categoryIcons.survival}
-                      <span className="hidden sm:inline">Survival</span>
+                      <span className="hidden sm:inline">{t('items.survival')}</span>
                     </TabsTrigger>
                     <TabsTrigger value="gadget" className="gap-1">
                       {categoryIcons.gadget}
-                      <span className="hidden sm:inline">Gadget</span>
+                      <span className="hidden sm:inline">{t('items.gadget')}</span>
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
 
                 {!selectedCharacter ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    Choose a character to get started
+                    {t('optimizer.chooseCharacter')}
                   </div>
                 ) : recommendedItems.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    No items available within your budget{selectedCategory !== 'all' ? ` in ${selectedCategory} category` : ''}
+                    {t('optimizer.noItemsAvailable')}{selectedCategory !== 'all' ? ` ${t('optimizer.inCategory')} ${selectedCategory} ${t('optimizer.category')}` : ''}
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
@@ -509,16 +512,16 @@ export default function Optimizer() {
               <CardHeader className="pb-2 sm:pb-4">
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                  Optimization History
+                  {t('optimizer.optimizationHistory')}
                 </CardTitle>
                 <CardDescription className="text-xs sm:text-sm">
-                  Your recent optimizations (session only)
+                  {t('optimizer.recentOptimizations')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-3 sm:p-6">
                 {optimizationHistory.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    No optimizations yet. Select items and add to history.
+                    {t('optimizer.noOptimizationsYet')}
                   </div>
                 ) : (
                   <ScrollArea className="h-[200px]">
@@ -540,7 +543,7 @@ export default function Optimizer() {
                             <div className="flex-1 min-w-0">
                               <div className="font-medium truncate">{entry.character.name}</div>
                               <div className="text-xs text-muted-foreground">
-                                {entry.items.length} items • {entry.totalCost} credits
+                                {entry.items.length} {t('optimizer.items')} • {entry.totalCost} {t('optimizer.credits')}
                               </div>
                             </div>
                             <div className="text-xs text-muted-foreground">
