@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { Item, ItemCategory, ItemRarity } from '@/types/database';
-import { Settings, Search, Save, Loader2, Package, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Settings, Search, Save, Loader2, Package, AlertCircle, ChevronDown, ChevronUp, ShieldX } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PerkBadge, PerkType } from '@/components/ui/PerkBadge';
 import { Badge } from '@/components/ui/badge';
@@ -30,10 +31,36 @@ export default function Admin() {
   const [search, setSearch] = useState('');
   const [pendingChanges, setPendingChanges] = useState<PendingChanges>({});
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Check if user is admin
+  useEffect(() => {
+    async function checkAdminRole() {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      setIsAdmin(!!roles);
+    }
+    checkAdminRole();
+  }, []);
 
   useEffect(() => {
     async function fetchItems() {
+      if (isAdmin === false) return;
+      
       const { data, error } = await supabase
         .from('items')
         .select('*')
@@ -46,8 +73,13 @@ export default function Admin() {
       }
       setLoading(false);
     }
-    fetchItems();
-  }, [toast]);
+    
+    if (isAdmin === true) {
+      fetchItems();
+    } else if (isAdmin === false) {
+      setLoading(false);
+    }
+  }, [toast, isAdmin]);
 
   const updateLocalValue = (itemId: string, field: keyof Item, value: string | number | boolean | null) => {
     setPendingChanges(prev => ({
@@ -144,11 +176,28 @@ export default function Admin() {
   const categories: ItemCategory[] = ['weapon', 'ability', 'survival', 'gadget'];
   const rarities: ItemRarity[] = ['common', 'rare', 'epic'];
 
-  if (loading) {
+  if (loading || isAdmin === null) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-16 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center gap-4">
+          <ShieldX className="h-16 w-16 text-destructive" />
+          <h1 className="text-2xl font-bold">Access Denied</h1>
+          <p className="text-muted-foreground text-center">
+            You don't have permission to access the admin panel.
+          </p>
+          <Button onClick={() => navigate('/')}>
+            Go Home
+          </Button>
         </div>
       </Layout>
     );
