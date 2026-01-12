@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Zap, LogOut, Menu, X, Moon, Sun, Settings, User, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import {
@@ -27,12 +28,44 @@ export function Header() {
   const { t, currentLang, setLanguage, isTranslating } = useTranslation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return document.documentElement.classList.contains('dark');
     }
     return true;
   });
+
+  // Check admin role and fetch username
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      setUsername(null);
+      return;
+    }
+
+    // Fetch admin role
+    supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle()
+      .then(({ data }) => {
+        setIsAdmin(!!data);
+      });
+
+    // Fetch username
+    supabase
+      .from('profiles')
+      .select('username')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setUsername(data?.username || null);
+      });
+  }, [user]);
 
   useEffect(() => {
     if (darkMode) {
@@ -53,6 +86,7 @@ export function Header() {
     navigate('/');
   };
 
+  const displayName = username || user?.email?.split('@')[0] || '';
   const currentLanguage = languages.find(l => l.code === currentLang) || languages[0];
 
   return (
@@ -78,7 +112,7 @@ export function Header() {
             >
               {t('nav.items')}
             </Link>
-            {user && (
+              {user && (
               <>
                 <Link 
                   to="/builds" 
@@ -86,13 +120,15 @@ export function Header() {
                 >
                   {t('nav.myBuilds')}
                 </Link>
-                <Link 
-                  to="/admin" 
-                  className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                >
-                  <Settings className="h-4 w-4" />
-                  {t('nav.admin')}
-                </Link>
+                {isAdmin && (
+                  <Link 
+                    to="/admin" 
+                    className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                  >
+                    <Settings className="h-4 w-4" />
+                    {t('nav.admin')}
+                  </Link>
+                )}
               </>
             )}
           </nav>
@@ -141,7 +177,7 @@ export function Header() {
                   <Button variant="ghost" size="sm" className="gap-2">
                     <User className="h-4 w-4" />
                     <span className="text-sm text-muted-foreground">
-                      {user.email?.split('@')[0]}
+                      {displayName}
                     </span>
                   </Button>
                 </Link>
@@ -194,14 +230,16 @@ export function Header() {
                   >
                     {t('nav.myBuilds')}
                   </Link>
-                  <Link 
-                    to="/admin" 
-                    className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Settings className="h-4 w-4" />
-                    {t('nav.admin')}
-                  </Link>
+                  {isAdmin && (
+                    <Link 
+                      to="/admin" 
+                      className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Settings className="h-4 w-4" />
+                      {t('nav.admin')}
+                    </Link>
+                  )}
                   <Link 
                     to="/profile" 
                     className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
