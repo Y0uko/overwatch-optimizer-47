@@ -4,7 +4,6 @@ import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { Item, ItemCategory, ItemRarity } from '@/types/database';
@@ -23,6 +22,18 @@ import {
 type PendingChanges = {
   [itemId: string]: Partial<Item>;
 };
+
+// Define stat fields with their display configuration
+// Uses new percentage-based column names from the database
+const statFields: { key: keyof Item; label: string; perkType?: PerkType }[] = [
+  { key: 'weapon_lifesteal', label: 'W.Lifesteal %', perkType: 'weapon-lifesteal' },
+  { key: 'ability_lifesteal', label: 'A.Lifesteal %', perkType: 'ability-lifesteal' },
+  { key: 'attack_speed', label: 'Atk Speed %', perkType: 'attack-speed' },
+  { key: 'max_ammo', label: 'Max Ammo %', perkType: 'max-ammo' },
+  { key: 'shield_bonus', label: 'Shield %', perkType: 'shield' },
+  { key: 'armor_bonus', label: 'Armor %', perkType: 'armor' },
+  { key: 'cooldown_reduction', label: 'CDR %', perkType: 'cooldown' },
+];
 
 export default function Admin() {
   const [items, setItems] = useState<Item[]>([]);
@@ -166,15 +177,8 @@ export default function Admin() {
     item.special_effect?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const perkColumns: { key: keyof Pick<Item, 'has_weapon_lifesteal' | 'has_ability_lifesteal' | 'has_attack_speed' | 'has_max_ammo'>; perkType: PerkType; label: string }[] = [
-    { key: 'has_weapon_lifesteal', perkType: 'weapon-lifesteal', label: 'W.LS' },
-    { key: 'has_ability_lifesteal', perkType: 'ability-lifesteal', label: 'A.LS' },
-    { key: 'has_attack_speed', perkType: 'attack-speed', label: 'AS' },
-    { key: 'has_max_ammo', perkType: 'max-ammo', label: 'Ammo' },
-  ];
-
   const categories: ItemCategory[] = ['weapon', 'ability', 'survival', 'gadget'];
-  const rarities: ItemRarity[] = ['common', 'rare', 'epic'];
+  const rarities: ItemRarity[] = ['common', 'rare', 'epic', 'legendary'];
 
   if (loading || isAdmin === null) {
     return (
@@ -276,8 +280,8 @@ export default function Admin() {
 
             {/* Perk Legend */}
             <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg">
-              {perkColumns.map(({ perkType }) => (
-                <PerkBadge key={perkType} perk={perkType} />
+              {statFields.filter(s => s.perkType).map(({ perkType }) => (
+                <PerkBadge key={perkType} perk={perkType!} />
               ))}
             </div>
 
@@ -349,22 +353,6 @@ export default function Admin() {
                             className="w-20 h-8 text-sm"
                           />
                         </div>
-
-                        {/* Perk Toggles */}
-                        <div className="flex items-center gap-3">
-                          {perkColumns.map(({ key, label }) => (
-                            <label 
-                              key={key}
-                              className="flex flex-col items-center gap-1 cursor-pointer"
-                            >
-                              <Checkbox
-                                checked={getDisplayValue(item, key)}
-                                onCheckedChange={(checked) => updateLocalValue(item.id, key, checked as boolean)}
-                              />
-                              <span className="text-[10px] text-muted-foreground hidden sm:block">{label}</span>
-                            </label>
-                          ))}
-                        </div>
                       </div>
 
                       {/* Expanded Details */}
@@ -410,10 +398,10 @@ export default function Admin() {
                             </div>
                           </div>
 
-                          {/* Stats */}
+                          {/* Core Stats */}
                           <div className="grid grid-cols-3 gap-3">
                             <div className="space-y-1">
-                              <label className="text-xs text-muted-foreground">Damage Bonus</label>
+                              <label className="text-xs text-muted-foreground">Damage Bonus %</label>
                               <Input
                                 type="number"
                                 value={getDisplayValue(item, 'damage_bonus') ?? 0}
@@ -431,7 +419,7 @@ export default function Admin() {
                               />
                             </div>
                             <div className="space-y-1">
-                              <label className="text-xs text-muted-foreground">Ability Power</label>
+                              <label className="text-xs text-muted-foreground">Ability Power %</label>
                               <Input
                                 type="number"
                                 value={getDisplayValue(item, 'ability_power') ?? 0}
@@ -439,6 +427,26 @@ export default function Admin() {
                                 className="h-8 text-sm"
                               />
                             </div>
+                          </div>
+
+                          {/* Percentage-based Stats */}
+                          <div className="grid grid-cols-4 gap-3">
+                            {statFields.map(({ key, label, perkType }) => (
+                              <div key={key} className="space-y-1">
+                                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                                  {perkType && <PerkBadge perk={perkType} className="scale-75 origin-left" />}
+                                  <span className="hidden sm:inline">{label}</span>
+                                </label>
+                                <Input
+                                  type="number"
+                                  value={(getDisplayValue(item, key) as number | null) ?? 0}
+                                  onChange={(e) => updateLocalValue(item.id, key, parseInt(e.target.value) || 0)}
+                                  className="h-8 text-sm"
+                                  min={0}
+                                  max={100}
+                                />
+                              </div>
+                            ))}
                           </div>
 
                           {/* Image URL */}

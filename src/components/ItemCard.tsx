@@ -74,11 +74,11 @@ export function ItemCard({ item, selected, onSelect, showStats = true, compact =
           </div>
         </div>
 
-        {/* Perk Badges */}
+        {/* Perk Badges with values */}
         {perks.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-1.5 sm:mb-2">
-            {perks.map((perk) => (
-              <PerkBadge key={perk} perk={perk} />
+            {perks.map(({ perk, value }) => (
+              <PerkBadge key={perk} perk={perk} value={value} />
             ))}
           </div>
         )}

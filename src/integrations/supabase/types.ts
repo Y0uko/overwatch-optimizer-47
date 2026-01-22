@@ -85,58 +85,67 @@ export type Database = {
       }
       items: {
         Row: {
+          ability_lifesteal: number | null
           ability_power: number | null
+          armor_bonus: number | null
+          attack_speed: number | null
           category: Database["public"]["Enums"]["item_category"]
+          cooldown_reduction: number | null
           cost: number
           created_at: string
           damage_bonus: number | null
           description: string | null
-          has_ability_lifesteal: boolean
-          has_attack_speed: boolean
-          has_max_ammo: boolean
-          has_weapon_lifesteal: boolean
           health_bonus: number | null
           id: string
           image_url: string | null
+          max_ammo: number | null
           name: string
           rarity: Database["public"]["Enums"]["item_rarity"]
+          shield_bonus: number | null
           special_effect: string | null
+          weapon_lifesteal: number | null
         }
         Insert: {
+          ability_lifesteal?: number | null
           ability_power?: number | null
+          armor_bonus?: number | null
+          attack_speed?: number | null
           category: Database["public"]["Enums"]["item_category"]
+          cooldown_reduction?: number | null
           cost: number
           created_at?: string
           damage_bonus?: number | null
           description?: string | null
-          has_ability_lifesteal?: boolean
-          has_attack_speed?: boolean
-          has_max_ammo?: boolean
-          has_weapon_lifesteal?: boolean
           health_bonus?: number | null
           id?: string
           image_url?: string | null
+          max_ammo?: number | null
           name: string
           rarity?: Database["public"]["Enums"]["item_rarity"]
+          shield_bonus?: number | null
           special_effect?: string | null
+          weapon_lifesteal?: number | null
         }
         Update: {
+          ability_lifesteal?: number | null
           ability_power?: number | null
+          armor_bonus?: number | null
+          attack_speed?: number | null
           category?: Database["public"]["Enums"]["item_category"]
+          cooldown_reduction?: number | null
           cost?: number
           created_at?: string
           damage_bonus?: number | null
           description?: string | null
-          has_ability_lifesteal?: boolean
-          has_attack_speed?: boolean
-          has_max_ammo?: boolean
-          has_weapon_lifesteal?: boolean
           health_bonus?: number | null
           id?: string
           image_url?: string | null
+          max_ammo?: number | null
           name?: string
           rarity?: Database["public"]["Enums"]["item_rarity"]
+          shield_bonus?: number | null
           special_effect?: string | null
+          weapon_lifesteal?: number | null
         }
         Relationships: []
       }
