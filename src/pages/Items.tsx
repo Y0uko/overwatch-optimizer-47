@@ -68,7 +68,7 @@ export default function Items() {
     }
 
     // Sort
-    const rarityOrder: Record<ItemRarity, number> = { common: 0, rare: 1, epic: 2 };
+    const rarityOrder: Record<ItemRarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3 };
     result = [...result].sort((a, b) => {
       switch (sortBy) {
         case 'name':

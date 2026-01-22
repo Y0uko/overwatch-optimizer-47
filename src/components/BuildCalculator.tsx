@@ -1,11 +1,18 @@
 import { useMemo } from 'react';
-import { Item, Character } from '@/types/database';
+import { Item, Character, ItemCategory } from '@/types/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Sword, Heart, Sparkles, Coins, TrendingUp, Zap, Shield, Target, Clock, Wind, X } from 'lucide-react';
+import { Sword, Heart, Sparkles, Coins, TrendingUp, Zap, Shield, Target, Clock, Wind, X, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+
+const categoryIcons: Record<ItemCategory, React.ReactNode> = {
+  weapon: <Sword className="h-4 w-4 text-muted-foreground" />,
+  ability: <Sparkles className="h-4 w-4 text-muted-foreground" />,
+  survival: <Shield className="h-4 w-4 text-muted-foreground" />,
+  gadget: <Wrench className="h-4 w-4 text-muted-foreground" />,
+};
 
 interface BuildCalculatorProps {
   character: Character | null;
@@ -355,8 +362,29 @@ export function BuildCalculator({ character, items, onRemoveItem }: BuildCalcula
                     <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </Button>
                 )}
+                {/* Item Icon */}
+                <div className={cn(
+                  "w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden flex-shrink-0 border",
+                  item.rarity === 'legendary' ? 'border-rarity-legendary/50 bg-rarity-legendary/10' :
+                  item.rarity === 'epic' ? 'border-rarity-epic/50 bg-rarity-epic/10' :
+                  item.rarity === 'rare' ? 'border-rarity-rare/50 bg-rarity-rare/10' :
+                  'border-border bg-muted'
+                )}>
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      {categoryIcons[item.category]}
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-xs sm:text-sm truncate">{item.name}</div>
+                  <div className={cn(
+                    "font-medium text-xs sm:text-sm truncate",
+                    item.rarity === 'legendary' ? 'text-rarity-legendary' :
+                    item.rarity === 'epic' ? 'text-rarity-epic' :
+                    item.rarity === 'rare' ? 'text-rarity-rare' : ''
+                  )}>{item.name}</div>
                   {item.special_effect && (
                     <p className="text-[10px] sm:text-xs text-muted-foreground truncate hidden sm:block">{item.special_effect}</p>
                   )}
