@@ -22,14 +22,23 @@ export interface Item {
   damage_bonus: number | null;
   health_bonus: number | null;
   ability_power: number | null;
+  // Percentage-based stats (new schema)
+  shield_bonus?: number | null;
+  armor_bonus?: number | null;
+  cooldown_reduction?: number | null;
+  attack_speed?: number | null;
+  ability_lifesteal?: number | null;
+  max_ammo?: number | null;
+  weapon_lifesteal?: number | null;
+  // Legacy boolean fields (for backwards compatibility during migration)
+  has_weapon_lifesteal?: boolean;
+  has_ability_lifesteal?: boolean;
+  has_attack_speed?: boolean;
+  has_max_ammo?: boolean;
   special_effect: string | null;
   description: string | null;
   image_url: string | null;
   created_at: string;
-  has_weapon_lifesteal: boolean;
-  has_ability_lifesteal: boolean;
-  has_attack_speed: boolean;
-  has_max_ammo: boolean;
 }
 
 export interface UserBuild {
