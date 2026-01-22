@@ -185,23 +185,33 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
 
     try {
       const texts = Object.values(sourceStrings);
+      const keys = Object.keys(sourceStrings);
       const targetLang = langCodeMap[lang] || 'EN';
+      
+      // Batch requests in chunks of 100 to stay within API limits
+      const BATCH_SIZE = 100;
+      const allTranslations: { text: string }[] = [];
+      
+      for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+        const batch = texts.slice(i, i + BATCH_SIZE);
+        const { data, error } = await supabase.functions.invoke('translate', {
+          body: { texts: batch, targetLang },
+        });
 
-      const { data, error } = await supabase.functions.invoke('translate', {
-        body: { texts, targetLang },
-      });
+        if (error) {
+          console.error('Translation error:', error);
+          setTranslations(sourceStrings);
+          return;
+        }
 
-      if (error) {
-        console.error('Translation error:', error);
-        setTranslations(sourceStrings);
-        return;
+        if (data?.translations) {
+          allTranslations.push(...data.translations);
+        }
       }
 
-      if (data?.translations) {
-        const keys = Object.keys(sourceStrings);
+      if (allTranslations.length === keys.length) {
         const translatedStrings: Record<string, string> = {};
-        
-        data.translations.forEach((t: { text: string }, i: number) => {
+        allTranslations.forEach((t, i) => {
           translatedStrings[keys[i]] = t.text;
         });
 
