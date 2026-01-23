@@ -58,6 +58,154 @@ export default function Optimizer() {
   const totalCost = selectedItems.reduce((sum, item) => sum + item.cost, 0);
   const remainingBudget = budget - totalCost;
 
+  // Character ability tags based on descriptions
+  const getCharacterTags = (character: Character): string[] => {
+    const tags: string[] = [];
+    const desc = (character.description || '').toLowerCase();
+    const name = character.name.toLowerCase();
+    
+    // AOE damage dealers
+    if (['freja', 'pharah', 'junkrat', 'sigma', 'doomfist', 'reinhardt'].includes(name)) {
+      tags.push('aoe');
+    }
+    // Slow/CC synergy characters
+    if (['mei', 'ana', 'brigitte', 'sigma', 'reinhardt', 'hazard'].includes(name)) {
+      tags.push('cc');
+    }
+    // High mobility characters
+    if (['tracer', 'genji', 'lucio', 'd.va', 'winston', 'kiriko'].includes(name)) {
+      tags.push('mobility');
+    }
+    // Healers
+    if (['ana', 'mercy', 'moira', 'lucio', 'kiriko', 'zenyatta', 'brigitte', 'juno'].includes(name)) {
+      tags.push('healer');
+    }
+    // Ability-focused
+    if (['moira', 'sigma', 'doomfist', 'genji', 'tracer', 'freja'].includes(name)) {
+      tags.push('ability-focused');
+    }
+    // Weapon-focused
+    if (['cassidy', 'ashe', 'soldier: 76', 'sojourn', 'reaper'].includes(name)) {
+      tags.push('weapon-focused');
+    }
+    // Airborne/flying
+    if (['pharah', 'd.va', 'mercy', 'juno'].includes(name)) {
+      tags.push('airborne');
+    }
+    
+    return tags;
+  };
+
+  // Parse item special effects for synergy keywords
+  const getItemEffectTags = (item: Item): { tags: string[], bonusValue: number } => {
+    const effect = (item.special_effect || '').toLowerCase();
+    const tags: string[] = [];
+    let bonusValue = 0;
+    
+    // Slow effects - great for AOE damage
+    if (effect.includes('slow') || effect.includes('freeze')) {
+      tags.push('slow');
+      bonusValue += 5;
+    }
+    // Damage amplification
+    if (effect.includes('deal') && (effect.includes('more damage') || effect.includes('bonus damage') || effect.includes('increased damage'))) {
+      tags.push('damage-amp');
+      bonusValue += 8;
+    }
+    // Airborne synergy
+    if (effect.includes('airborne') || effect.includes('air')) {
+      tags.push('airborne');
+      bonusValue += 4;
+    }
+    // Healing synergy
+    if (effect.includes('heal') || effect.includes('life')) {
+      tags.push('healing');
+      bonusValue += 3;
+    }
+    // Ultimate charge
+    if (effect.includes('ultimate') || effect.includes('charge')) {
+      tags.push('ultimate');
+      bonusValue += 4;
+    }
+    // Ability synergy
+    if (effect.includes('ability') && (effect.includes('power') || effect.includes('damage'))) {
+      tags.push('ability-boost');
+      bonusValue += 5;
+    }
+    // Cooldown effects
+    if (effect.includes('cooldown')) {
+      tags.push('cooldown');
+      bonusValue += 3;
+    }
+    // Move speed
+    if (effect.includes('move speed') || effect.includes('speed')) {
+      tags.push('mobility');
+      bonusValue += 2;
+    }
+    // Attack speed
+    if (effect.includes('attack speed')) {
+      tags.push('attack-speed');
+      bonusValue += 3;
+    }
+    // CC/stun effects
+    if (effect.includes('stun') || effect.includes('knockback') || effect.includes('hinder')) {
+      tags.push('cc');
+      bonusValue += 4;
+    }
+    
+    return { tags, bonusValue };
+  };
+
+  // Calculate synergy between item effect and character
+  const calculateEffectSynergy = (item: Item, character: Character): number => {
+    const charTags = getCharacterTags(character);
+    const { tags: itemTags, bonusValue } = getItemEffectTags(item);
+    
+    let synergy = 0;
+    
+    // AOE + Slow synergy (e.g., Freja + Liquid Nitrogen)
+    if (charTags.includes('aoe') && itemTags.includes('slow')) {
+      synergy += 15; // High synergy - slow keeps enemies in AOE longer
+    }
+    
+    // CC characters benefit from slow/CC items
+    if (charTags.includes('cc') && (itemTags.includes('slow') || itemTags.includes('cc'))) {
+      synergy += 8;
+    }
+    
+    // Mobility characters benefit from speed items
+    if (charTags.includes('mobility') && itemTags.includes('mobility')) {
+      synergy += 10;
+    }
+    
+    // Healers benefit from healing items
+    if (charTags.includes('healer') && itemTags.includes('healing')) {
+      synergy += 12;
+    }
+    
+    // Ability-focused characters benefit from ability items
+    if (charTags.includes('ability-focused') && (itemTags.includes('ability-boost') || itemTags.includes('cooldown'))) {
+      synergy += 10;
+    }
+    
+    // Weapon-focused characters benefit from attack speed and damage amp
+    if (charTags.includes('weapon-focused') && (itemTags.includes('attack-speed') || itemTags.includes('damage-amp'))) {
+      synergy += 10;
+    }
+    
+    // Airborne characters benefit from airborne items
+    if (charTags.includes('airborne') && itemTags.includes('airborne')) {
+      synergy += 15;
+    }
+    
+    // Ultimate charge is universally good but better for ability-focused
+    if (itemTags.includes('ultimate') && charTags.includes('ability-focused')) {
+      synergy += 8;
+    }
+    
+    return synergy + bonusValue;
+  };
+
   // Calculate synergy bonus for an item based on current build stats
   const calculateSynergyBonus = (item: Item, currentStats: { 
     totalCDR: number; 
@@ -96,20 +244,23 @@ export default function Optimizer() {
     return synergyBonus;
   };
 
-  // Calculate item value for knapsack
-  const getItemValue = (item: Item, role: string) => {
+  // Calculate item value for knapsack (includes effect synergy with character)
+  const getItemValue = (item: Item, character: Character) => {
     const damageValue = (item.damage_bonus || 0) + (item.ability_power || 0) * 0.8;
     const survivalValue = (item.health_bonus || 0) * 0.1 + (item.shield_bonus || 0) * 0.15 + (item.armor_bonus || 0) * 0.2;
     const utilityValue = (item.cooldown_reduction || 0) * 0.5 + (item.attack_speed || 0) * 0.3;
     
     let roleMultiplier = 1;
-    if (role === 'damage' && (item.damage_bonus || 0) > 0) roleMultiplier = 1.5;
-    if (role === 'tank' && (item.health_bonus || 0) > 0) roleMultiplier = 1.5;
-    if (role === 'support' && (item.ability_power || 0) > 0) roleMultiplier = 1.5;
+    if (character.role === 'damage' && (item.damage_bonus || 0) > 0) roleMultiplier = 1.5;
+    if (character.role === 'tank' && (item.health_bonus || 0) > 0) roleMultiplier = 1.5;
+    if (character.role === 'support' && (item.ability_power || 0) > 0) roleMultiplier = 1.5;
     
     const rarityBonus = { common: 1, rare: 1.1, epic: 1.2, legendary: 1.3 }[item.rarity] || 1;
     
-    return (damageValue + survivalValue + utilityValue) * roleMultiplier * rarityBonus;
+    // Add effect synergy bonus (e.g., Freja + Liquid Nitrogen slow)
+    const effectSynergy = calculateEffectSynergy(item, character);
+    
+    return (damageValue + survivalValue + utilityValue + effectSynergy) * roleMultiplier * rarityBonus;
   };
 
   // 0/1 Knapsack with max 6 items constraint
@@ -117,7 +268,7 @@ export default function Optimizer() {
     items: Item[], 
     capacity: number, 
     maxItems: number,
-    role: string
+    character: Character
   ): Item[] => {
     const n = items.length;
     if (n === 0 || capacity <= 0) return [];
@@ -134,7 +285,7 @@ export default function Optimizer() {
     for (let i = 0; i < n; i++) {
       const item = items[i];
       const weight = item.cost;
-      const value = getItemValue(item, role);
+      const value = getItemValue(item, character);
       
       // Iterate backwards to avoid using same item twice
       for (let w = capacity; w >= weight; w--) {
@@ -182,7 +333,7 @@ export default function Optimizer() {
       item => selectedCategory === 'all' || item.category === selectedCategory
     );
     
-    return solveKnapsack(availableItems, budget, 6, selectedCharacter.role);
+    return solveKnapsack(availableItems, budget, 6, selectedCharacter);
   }, [items, selectedCharacter, budget, selectedCategory]);
 
   const recommendedItems = useMemo(() => {
@@ -198,7 +349,7 @@ export default function Optimizer() {
     
     // Score items by profitability and synergy with current build
     const scoredItems = items.map(item => {
-      const value = getItemValue(item, selectedCharacter.role);
+      const value = getItemValue(item, selectedCharacter);
       const profitability = item.cost > 0 ? (value / item.cost) * 1000 : 0;
       const synergyBonus = calculateSynergyBonus(item, currentStats);
 
