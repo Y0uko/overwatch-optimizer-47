@@ -58,39 +58,104 @@ export default function Optimizer() {
   const totalCost = selectedItems.reduce((sum, item) => sum + item.cost, 0);
   const remainingBudget = budget - totalCost;
 
+  // Calculate synergy bonus for an item based on current build stats
+  const calculateSynergyBonus = (item: Item, currentStats: { 
+    totalCDR: number; 
+    totalAbilityPower: number;
+    totalAttackSpeed: number;
+    totalLifesteal: number;
+  }) => {
+    let synergyBonus = 0;
+    
+    // Ability Power + Cooldown Reduction synergy (capped at 20% CDR)
+    const itemCDR = item.cooldown_reduction || 0;
+    const itemAP = item.ability_power || 0;
+    
+    if (itemAP > 0 && currentStats.totalCDR > 0 && currentStats.totalCDR <= 20) {
+      // AP benefits from existing CDR (more abilities = more AP damage)
+      synergyBonus += itemAP * (currentStats.totalCDR / 20) * 0.5;
+    }
+    
+    if (itemCDR > 0 && currentStats.totalAbilityPower > 0) {
+      // CDR benefits from existing AP (reduced CD = more AP casts)
+      const effectiveCDR = Math.min(itemCDR, 20 - currentStats.totalCDR);
+      if (effectiveCDR > 0) {
+        synergyBonus += effectiveCDR * (currentStats.totalAbilityPower / 50) * 0.3;
+      }
+    }
+    
+    // Attack Speed + Weapon Lifesteal synergy
+    const itemAS = item.attack_speed || 0;
+    const itemWL = item.weapon_lifesteal || 0;
+    
+    if (itemAS > 0 && currentStats.totalLifesteal > 0) {
+      synergyBonus += itemAS * (currentStats.totalLifesteal / 30) * 0.3;
+    }
+    if (itemWL > 0 && currentStats.totalAttackSpeed > 0) {
+      synergyBonus += itemWL * (currentStats.totalAttackSpeed / 40) * 0.3;
+    }
+    
+    return synergyBonus;
+  };
+
   // Get optimal build - best combination of items within budget
   const optimalBuild = useMemo(() => {
     if (!selectedCharacter) return [];
     
-    // Score items by efficiency for the character's role
-    const scoredItems = items
-      .filter(item => selectedCategory === 'all' || item.category === selectedCategory)
-      .map(item => {
-        const totalStats = (item.damage_bonus || 0) + (item.health_bonus || 0) + (item.ability_power || 0);
-        const efficiency = item.cost > 0 ? totalStats / item.cost : 0;
-        const rarityBonus = { common: 0, rare: 1, epic: 2, legendary: 3 }[item.rarity] || 0;
-        
-        let roleBonus = 0;
-        if (selectedCharacter.role === 'damage' && (item.damage_bonus || 0) > 0) roleBonus = 3;
-        if (selectedCharacter.role === 'tank' && (item.health_bonus || 0) > 0) roleBonus = 3;
-        if (selectedCharacter.role === 'support' && (item.ability_power || 0) > 0) roleBonus = 3;
+    // Score items by PROFITABILITY (damage/cost) and synergies
+    const calculateItemScore = (item: Item, currentBuild: Item[]) => {
+      // Calculate current build stats for synergy
+      const currentStats = {
+        totalCDR: Math.min(20, currentBuild.reduce((sum, i) => sum + (i.cooldown_reduction || 0), 0)),
+        totalAbilityPower: currentBuild.reduce((sum, i) => sum + (i.ability_power || 0), 0),
+        totalAttackSpeed: currentBuild.reduce((sum, i) => sum + (i.attack_speed || 0), 0),
+        totalLifesteal: currentBuild.reduce((sum, i) => sum + (i.weapon_lifesteal || 0) + (i.ability_lifesteal || 0), 0),
+      };
+      
+      // Profitability = Damage / Price (higher = better value)
+      const damageValue = (item.damage_bonus || 0) + (item.ability_power || 0) * 0.8;
+      const profitability = item.cost > 0 ? (damageValue / item.cost) * 1000 : 0;
+      
+      // Calculate synergy bonus
+      const synergyBonus = calculateSynergyBonus(item, currentStats);
+      
+      // Role bonus
+      let roleBonus = 0;
+      if (selectedCharacter.role === 'damage' && (item.damage_bonus || 0) > 0) roleBonus = 5;
+      if (selectedCharacter.role === 'tank' && (item.health_bonus || 0) > 0) roleBonus = 5;
+      if (selectedCharacter.role === 'support' && (item.ability_power || 0) > 0) roleBonus = 5;
+      
+      // Rarity bonus (small)
+      const rarityBonus = { common: 0, rare: 0.5, epic: 1, legendary: 1.5 }[item.rarity] || 0;
+      
+      return profitability + synergyBonus * 2 + roleBonus + rarityBonus;
+    };
 
-        return {
-          ...item,
-          score: efficiency * 100 + rarityBonus * 0.5 + roleBonus + totalStats * 0.1,
-        };
-      })
-      .sort((a, b) => b.score - a.score);
+    const availableItems = items.filter(
+      item => selectedCategory === 'all' || item.category === selectedCategory
+    );
 
-    // Greedy algorithm to find best combination within budget
-    const selected: typeof scoredItems = [];
+    // Greedy algorithm with synergy consideration
+    const selected: Item[] = [];
     let spent = 0;
+    const usedIds = new Set<string>();
     
-    for (const item of scoredItems) {
-      if (spent + item.cost <= budget && selected.length < 6) {
-        selected.push(item);
-        spent += item.cost;
-      }
+    while (selected.length < 6) {
+      // Score all remaining items based on current build
+      const candidates = availableItems
+        .filter(item => !usedIds.has(item.id) && spent + item.cost <= budget)
+        .map(item => ({
+          item,
+          score: calculateItemScore(item, selected),
+        }))
+        .sort((a, b) => b.score - a.score);
+      
+      if (candidates.length === 0) break;
+      
+      const best = candidates[0];
+      selected.push(best.item);
+      usedIds.add(best.item.id);
+      spent += best.item.cost;
     }
     
     return selected;
@@ -99,26 +164,41 @@ export default function Optimizer() {
   const recommendedItems = useMemo(() => {
     if (!selectedCharacter) return [];
     
-    // Calculate efficiency score (stats per cost)
+    // Current build stats for synergy calculation
+    const currentStats = {
+      totalCDR: Math.min(20, selectedItems.reduce((sum, i) => sum + (i.cooldown_reduction || 0), 0)),
+      totalAbilityPower: selectedItems.reduce((sum, i) => sum + (i.ability_power || 0), 0),
+      totalAttackSpeed: selectedItems.reduce((sum, i) => sum + (i.attack_speed || 0), 0),
+      totalLifesteal: selectedItems.reduce((sum, i) => sum + (i.weapon_lifesteal || 0) + (i.ability_lifesteal || 0), 0),
+    };
+    
+    // Score items by profitability and synergy with current build
     const scoredItems = items.map(item => {
-      const totalStats = (item.damage_bonus || 0) + (item.health_bonus || 0) + (item.ability_power || 0);
-      const efficiency = item.cost > 0 ? totalStats / item.cost : 0;
-      const rarityBonus = { common: 0, rare: 1, epic: 2 }[item.rarity] || 0;
+      // Profitability = Damage value / Price
+      const damageValue = (item.damage_bonus || 0) + (item.ability_power || 0) * 0.8;
+      const profitability = item.cost > 0 ? (damageValue / item.cost) * 1000 : 0;
       
-      // Bonus for role-appropriate items
+      // Synergy bonus
+      const synergyBonus = calculateSynergyBonus(item, currentStats);
+      
+      // Role bonus
       let roleBonus = 0;
-      if (selectedCharacter.role === 'damage' && (item.damage_bonus || 0) > 0) roleBonus = 2;
-      if (selectedCharacter.role === 'tank' && (item.health_bonus || 0) > 0) roleBonus = 2;
-      if (selectedCharacter.role === 'support' && (item.ability_power || 0) > 0) roleBonus = 2;
+      if (selectedCharacter.role === 'damage' && (item.damage_bonus || 0) > 0) roleBonus = 3;
+      if (selectedCharacter.role === 'tank' && (item.health_bonus || 0) > 0) roleBonus = 3;
+      if (selectedCharacter.role === 'support' && (item.ability_power || 0) > 0) roleBonus = 3;
+
+      // Rarity bonus
+      const rarityBonus = { common: 0, rare: 0.5, epic: 1, legendary: 1.5 }[item.rarity] || 0;
 
       return {
         ...item,
-        score: efficiency + rarityBonus * 0.1 + roleBonus,
+        score: profitability + synergyBonus * 2 + roleBonus + rarityBonus,
+        profitability,
+        synergyBonus,
       };
     });
 
-    // Filter by REMAINING budget (dynamic), category, and sort by score
-    // Also exclude already selected items
+    // Filter by remaining budget, category, exclude selected, sort by score
     const selectedIds = new Set(selectedItems.map(i => i.id));
     return scoredItems
       .filter(item => !selectedIds.has(item.id))
