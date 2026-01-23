@@ -72,12 +72,10 @@ export default function Optimizer() {
     const itemAP = item.ability_power || 0;
     
     if (itemAP > 0 && currentStats.totalCDR > 0 && currentStats.totalCDR <= 20) {
-      // AP benefits from existing CDR (more abilities = more AP damage)
       synergyBonus += itemAP * (currentStats.totalCDR / 20) * 0.5;
     }
     
     if (itemCDR > 0 && currentStats.totalAbilityPower > 0) {
-      // CDR benefits from existing AP (reduced CD = more AP casts)
       const effectiveCDR = Math.min(itemCDR, 20 - currentStats.totalCDR);
       if (effectiveCDR > 0) {
         synergyBonus += effectiveCDR * (currentStats.totalAbilityPower / 50) * 0.3;
@@ -98,67 +96,93 @@ export default function Optimizer() {
     return synergyBonus;
   };
 
-  // Get optimal build - best combination of items within budget
+  // Calculate item value for knapsack
+  const getItemValue = (item: Item, role: string) => {
+    const damageValue = (item.damage_bonus || 0) + (item.ability_power || 0) * 0.8;
+    const survivalValue = (item.health_bonus || 0) * 0.1 + (item.shield_bonus || 0) * 0.15 + (item.armor_bonus || 0) * 0.2;
+    const utilityValue = (item.cooldown_reduction || 0) * 0.5 + (item.attack_speed || 0) * 0.3;
+    
+    let roleMultiplier = 1;
+    if (role === 'damage' && (item.damage_bonus || 0) > 0) roleMultiplier = 1.5;
+    if (role === 'tank' && (item.health_bonus || 0) > 0) roleMultiplier = 1.5;
+    if (role === 'support' && (item.ability_power || 0) > 0) roleMultiplier = 1.5;
+    
+    const rarityBonus = { common: 1, rare: 1.1, epic: 1.2, legendary: 1.3 }[item.rarity] || 1;
+    
+    return (damageValue + survivalValue + utilityValue) * roleMultiplier * rarityBonus;
+  };
+
+  // 0/1 Knapsack with max 6 items constraint
+  const solveKnapsack = (
+    items: Item[], 
+    capacity: number, 
+    maxItems: number,
+    role: string
+  ): Item[] => {
+    const n = items.length;
+    if (n === 0 || capacity <= 0) return [];
+    
+    // dp[i][w][k] = max value using first i items, weight w, k items selected
+    // Optimize: use 2D array [weight][itemCount] and iterate items
+    const dp: number[][] = Array.from({ length: capacity + 1 }, () => 
+      Array(maxItems + 1).fill(0)
+    );
+    const keep: boolean[][][] = Array.from({ length: n }, () =>
+      Array.from({ length: capacity + 1 }, () => Array(maxItems + 1).fill(false))
+    );
+    
+    for (let i = 0; i < n; i++) {
+      const item = items[i];
+      const weight = item.cost;
+      const value = getItemValue(item, role);
+      
+      // Iterate backwards to avoid using same item twice
+      for (let w = capacity; w >= weight; w--) {
+        for (let k = maxItems; k >= 1; k--) {
+          const withItem = dp[w - weight][k - 1] + value;
+          if (withItem > dp[w][k]) {
+            dp[w][k] = withItem;
+            keep[i][w][k] = true;
+          }
+        }
+      }
+    }
+    
+    // Find best (w, k) combination
+    let bestW = 0, bestK = 0, bestVal = 0;
+    for (let w = 0; w <= capacity; w++) {
+      for (let k = 0; k <= maxItems; k++) {
+        if (dp[w][k] > bestVal) {
+          bestVal = dp[w][k];
+          bestW = w;
+          bestK = k;
+        }
+      }
+    }
+    
+    // Backtrack to find selected items
+    const selected: Item[] = [];
+    let w = bestW, k = bestK;
+    for (let i = n - 1; i >= 0 && k > 0; i--) {
+      if (keep[i][w][k]) {
+        selected.push(items[i]);
+        w -= items[i].cost;
+        k--;
+      }
+    }
+    
+    return selected.reverse();
+  };
+
+  // Get optimal build using 0/1 Knapsack
   const optimalBuild = useMemo(() => {
     if (!selectedCharacter) return [];
     
-    // Score items by PROFITABILITY (damage/cost) and synergies
-    const calculateItemScore = (item: Item, currentBuild: Item[]) => {
-      // Calculate current build stats for synergy
-      const currentStats = {
-        totalCDR: Math.min(20, currentBuild.reduce((sum, i) => sum + (i.cooldown_reduction || 0), 0)),
-        totalAbilityPower: currentBuild.reduce((sum, i) => sum + (i.ability_power || 0), 0),
-        totalAttackSpeed: currentBuild.reduce((sum, i) => sum + (i.attack_speed || 0), 0),
-        totalLifesteal: currentBuild.reduce((sum, i) => sum + (i.weapon_lifesteal || 0) + (i.ability_lifesteal || 0), 0),
-      };
-      
-      // Profitability = Damage / Price (higher = better value)
-      const damageValue = (item.damage_bonus || 0) + (item.ability_power || 0) * 0.8;
-      const profitability = item.cost > 0 ? (damageValue / item.cost) * 1000 : 0;
-      
-      // Calculate synergy bonus
-      const synergyBonus = calculateSynergyBonus(item, currentStats);
-      
-      // Role bonus
-      let roleBonus = 0;
-      if (selectedCharacter.role === 'damage' && (item.damage_bonus || 0) > 0) roleBonus = 5;
-      if (selectedCharacter.role === 'tank' && (item.health_bonus || 0) > 0) roleBonus = 5;
-      if (selectedCharacter.role === 'support' && (item.ability_power || 0) > 0) roleBonus = 5;
-      
-      // Rarity bonus (small)
-      const rarityBonus = { common: 0, rare: 0.5, epic: 1, legendary: 1.5 }[item.rarity] || 0;
-      
-      return profitability + synergyBonus * 2 + roleBonus + rarityBonus;
-    };
-
     const availableItems = items.filter(
       item => selectedCategory === 'all' || item.category === selectedCategory
     );
-
-    // Greedy algorithm with synergy consideration
-    const selected: Item[] = [];
-    let spent = 0;
-    const usedIds = new Set<string>();
     
-    while (selected.length < 6) {
-      // Score all remaining items based on current build
-      const candidates = availableItems
-        .filter(item => !usedIds.has(item.id) && spent + item.cost <= budget)
-        .map(item => ({
-          item,
-          score: calculateItemScore(item, selected),
-        }))
-        .sort((a, b) => b.score - a.score);
-      
-      if (candidates.length === 0) break;
-      
-      const best = candidates[0];
-      selected.push(best.item);
-      usedIds.add(best.item.id);
-      spent += best.item.cost;
-    }
-    
-    return selected;
+    return solveKnapsack(availableItems, budget, 6, selectedCharacter.role);
   }, [items, selectedCharacter, budget, selectedCategory]);
 
   const recommendedItems = useMemo(() => {
@@ -174,31 +198,18 @@ export default function Optimizer() {
     
     // Score items by profitability and synergy with current build
     const scoredItems = items.map(item => {
-      // Profitability = Damage value / Price
-      const damageValue = (item.damage_bonus || 0) + (item.ability_power || 0) * 0.8;
-      const profitability = item.cost > 0 ? (damageValue / item.cost) * 1000 : 0;
-      
-      // Synergy bonus
+      const value = getItemValue(item, selectedCharacter.role);
+      const profitability = item.cost > 0 ? (value / item.cost) * 1000 : 0;
       const synergyBonus = calculateSynergyBonus(item, currentStats);
-      
-      // Role bonus
-      let roleBonus = 0;
-      if (selectedCharacter.role === 'damage' && (item.damage_bonus || 0) > 0) roleBonus = 3;
-      if (selectedCharacter.role === 'tank' && (item.health_bonus || 0) > 0) roleBonus = 3;
-      if (selectedCharacter.role === 'support' && (item.ability_power || 0) > 0) roleBonus = 3;
-
-      // Rarity bonus
-      const rarityBonus = { common: 0, rare: 0.5, epic: 1, legendary: 1.5 }[item.rarity] || 0;
 
       return {
         ...item,
-        score: profitability + synergyBonus * 2 + roleBonus + rarityBonus,
+        score: profitability + synergyBonus * 2,
         profitability,
         synergyBonus,
       };
     });
 
-    // Filter by remaining budget, category, exclude selected, sort by score
     const selectedIds = new Set(selectedItems.map(i => i.id));
     return scoredItems
       .filter(item => !selectedIds.has(item.id))
