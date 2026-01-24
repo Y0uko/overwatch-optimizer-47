@@ -96,62 +96,71 @@ export default function Optimizer() {
     return tags;
   };
 
-  // Parse item special effects for synergy keywords
+  // Parse item special effects AND description for synergy keywords
+  // Description is considered but with lower priority than special_effect
   const getItemEffectTags = (item: Item): { tags: string[], bonusValue: number } => {
     const effect = (item.special_effect || '').toLowerCase();
+    const description = (item.description || '').toLowerCase();
     const tags: string[] = [];
     let bonusValue = 0;
     
+    // Helper to check both effect and description, with different weights
+    const checkKeyword = (keywords: string[], tagName: string, effectBonus: number, descBonus: number) => {
+      const inEffect = keywords.some(kw => effect.includes(kw));
+      const inDesc = keywords.some(kw => description.includes(kw));
+      
+      if (inEffect || inDesc) {
+        tags.push(tagName);
+        // Effect gets full bonus, description gets reduced bonus (lower priority)
+        bonusValue += inEffect ? effectBonus : descBonus;
+      }
+    };
+    
     // Slow effects - great for AOE damage
-    if (effect.includes('slow') || effect.includes('freeze')) {
-      tags.push('slow');
-      bonusValue += 5;
-    }
+    checkKeyword(['slow', 'freeze'], 'slow', 5, 2);
+    
     // Damage amplification
-    if (effect.includes('deal') && (effect.includes('more damage') || effect.includes('bonus damage') || effect.includes('increased damage'))) {
+    if ((effect.includes('deal') || description.includes('deal')) && 
+        (effect.includes('more damage') || effect.includes('bonus damage') || effect.includes('increased damage') ||
+         description.includes('more damage') || description.includes('bonus damage') || description.includes('increased damage'))) {
       tags.push('damage-amp');
-      bonusValue += 8;
+      bonusValue += effect.includes('damage') ? 8 : 3;
     }
+    
     // Airborne synergy
-    if (effect.includes('airborne') || effect.includes('air')) {
-      tags.push('airborne');
-      bonusValue += 4;
-    }
+    checkKeyword(['airborne', 'air'], 'airborne', 4, 1.5);
+    
     // Healing synergy
-    if (effect.includes('heal') || effect.includes('life')) {
-      tags.push('healing');
-      bonusValue += 3;
-    }
+    checkKeyword(['heal', 'life', 'restore'], 'healing', 3, 1);
+    
     // Ultimate charge
-    if (effect.includes('ultimate') || effect.includes('charge')) {
-      tags.push('ultimate');
-      bonusValue += 4;
-    }
+    checkKeyword(['ultimate', 'charge'], 'ultimate', 4, 1.5);
+    
     // Ability synergy
-    if (effect.includes('ability') && (effect.includes('power') || effect.includes('damage'))) {
+    if ((effect.includes('ability') || description.includes('ability')) && 
+        (effect.includes('power') || effect.includes('damage') ||
+         description.includes('power') || description.includes('damage'))) {
       tags.push('ability-boost');
-      bonusValue += 5;
+      bonusValue += effect.includes('ability') ? 5 : 2;
     }
+    
     // Cooldown effects
-    if (effect.includes('cooldown')) {
-      tags.push('cooldown');
-      bonusValue += 3;
-    }
+    checkKeyword(['cooldown'], 'cooldown', 3, 1);
+    
     // Move speed
-    if (effect.includes('move speed') || effect.includes('speed')) {
-      tags.push('mobility');
-      bonusValue += 2;
-    }
+    checkKeyword(['move speed', 'speed', 'movement'], 'mobility', 2, 0.8);
+    
     // Attack speed
-    if (effect.includes('attack speed')) {
-      tags.push('attack-speed');
-      bonusValue += 3;
-    }
+    checkKeyword(['attack speed'], 'attack-speed', 3, 1);
+    
     // CC/stun effects
-    if (effect.includes('stun') || effect.includes('knockback') || effect.includes('hinder')) {
-      tags.push('cc');
-      bonusValue += 4;
-    }
+    checkKeyword(['stun', 'knockback', 'hinder', 'root', 'disable'], 'cc', 4, 1.5);
+    
+    // Shield/survivability from description
+    checkKeyword(['shield', 'barrier', 'protect'], 'defensive', 2, 0.8);
+    
+    // Burst damage from description
+    checkKeyword(['burst', 'execute', 'critical', 'crit'], 'burst', 3, 1.2);
     
     return { tags, bonusValue };
   };
