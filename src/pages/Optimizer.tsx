@@ -263,8 +263,19 @@ export default function Optimizer() {
     return (damageValue + survivalValue + utilityValue + effectSynergy) * roleMultiplier * rarityBonus;
   };
 
-  // 0/1 Knapsack with max 6 items constraint
-  const solveKnapsack = (
+  // Integer Linear Programming (ILP) using Branch-and-Bound
+  // Maximize: Σ(value[i] * x[i]) where x[i] ∈ {0,1}
+  // Subject to: Σ(cost[i] * x[i]) <= budget
+  //             Σ(x[i]) <= maxItems
+  
+  interface ILPNode {
+    fixed: Map<number, boolean>; // index -> 0 or 1
+    upperBound: number;
+    solution: number[];
+    value: number;
+  }
+
+  const solveILP = (
     items: Item[], 
     capacity: number, 
     maxItems: number,
@@ -273,56 +284,140 @@ export default function Optimizer() {
     const n = items.length;
     if (n === 0 || capacity <= 0) return [];
     
-    // dp[i][w][k] = max value using first i items, weight w, k items selected
-    // Optimize: use 2D array [weight][itemCount] and iterate items
-    const dp: number[][] = Array.from({ length: capacity + 1 }, () => 
-      Array(maxItems + 1).fill(0)
-    );
-    const keep: boolean[][][] = Array.from({ length: n }, () =>
-      Array.from({ length: capacity + 1 }, () => Array(maxItems + 1).fill(false))
-    );
+    // Pre-compute values for all items
+    const values = items.map(item => getItemValue(item, character));
+    const costs = items.map(item => item.cost);
     
-    for (let i = 0; i < n; i++) {
-      const item = items[i];
-      const weight = item.cost;
-      const value = getItemValue(item, character);
+    // Solve LP relaxation (fractional knapsack) to get upper bound
+    const solveLPRelaxation = (fixed: Map<number, boolean>): { upperBound: number; solution: number[] } => {
+      const solution = new Array(n).fill(0);
+      let remainingCapacity = capacity;
+      let remainingSlots = maxItems;
+      let totalValue = 0;
       
-      // Iterate backwards to avoid using same item twice
-      for (let w = capacity; w >= weight; w--) {
-        for (let k = maxItems; k >= 1; k--) {
-          const withItem = dp[w - weight][k - 1] + value;
-          if (withItem > dp[w][k]) {
-            dp[w][k] = withItem;
-            keep[i][w][k] = true;
-          }
+      // Apply fixed variables
+      for (const [idx, val] of fixed) {
+        solution[idx] = val ? 1 : 0;
+        if (val) {
+          remainingCapacity -= costs[idx];
+          remainingSlots -= 1;
+          totalValue += values[idx];
         }
       }
-    }
-    
-    // Find best (w, k) combination
-    let bestW = 0, bestK = 0, bestVal = 0;
-    for (let w = 0; w <= capacity; w++) {
-      for (let k = 0; k <= maxItems; k++) {
-        if (dp[w][k] > bestVal) {
-          bestVal = dp[w][k];
-          bestW = w;
-          bestK = k;
+      
+      if (remainingCapacity < 0 || remainingSlots < 0) {
+        return { upperBound: -Infinity, solution };
+      }
+      
+      // Sort unfixed items by value-to-weight ratio (efficiency)
+      const unfixedItems = items
+        .map((_, idx) => idx)
+        .filter(idx => !fixed.has(idx))
+        .map(idx => ({ idx, ratio: costs[idx] > 0 ? values[idx] / costs[idx] : Infinity }))
+        .sort((a, b) => b.ratio - a.ratio);
+      
+      for (const { idx } of unfixedItems) {
+        if (remainingSlots <= 0) break;
+        
+        if (costs[idx] <= remainingCapacity) {
+          // Can fit entirely
+          solution[idx] = 1;
+          remainingCapacity -= costs[idx];
+          remainingSlots -= 1;
+          totalValue += values[idx];
+        } else if (remainingCapacity > 0) {
+          // Fractional relaxation (for upper bound only)
+          const fraction = remainingCapacity / costs[idx];
+          solution[idx] = fraction;
+          totalValue += values[idx] * fraction;
+          remainingCapacity = 0;
         }
       }
-    }
+      
+      return { upperBound: totalValue, solution };
+    };
     
-    // Backtrack to find selected items
-    const selected: Item[] = [];
-    let w = bestW, k = bestK;
-    for (let i = n - 1; i >= 0 && k > 0; i--) {
-      if (keep[i][w][k]) {
-        selected.push(items[i]);
-        w -= items[i].cost;
-        k--;
+    // Branch-and-Bound algorithm
+    let bestValue = -Infinity;
+    let bestSolution: number[] = new Array(n).fill(0);
+    
+    // Priority queue (max-heap by upper bound)
+    const queue: ILPNode[] = [];
+    
+    // Initial node
+    const initialRelax = solveLPRelaxation(new Map());
+    queue.push({
+      fixed: new Map(),
+      upperBound: initialRelax.upperBound,
+      solution: initialRelax.solution,
+      value: 0
+    });
+    
+    let iterations = 0;
+    const maxIterations = 5000; // Prevent infinite loops
+    
+    while (queue.length > 0 && iterations < maxIterations) {
+      iterations++;
+      
+      // Get node with highest upper bound
+      queue.sort((a, b) => b.upperBound - a.upperBound);
+      const node = queue.shift()!;
+      
+      // Prune if upper bound is worse than best found
+      if (node.upperBound <= bestValue) continue;
+      
+      // Check if solution is integral
+      let fractionalIdx = -1;
+      for (let i = 0; i < n; i++) {
+        if (!node.fixed.has(i) && node.solution[i] > 0 && node.solution[i] < 1) {
+          fractionalIdx = i;
+          break;
+        }
+      }
+      
+      if (fractionalIdx === -1) {
+        // All integer solution - check if it's the best
+        const intValue = node.solution.reduce((sum, x, i) => sum + (x >= 0.99 ? values[i] : 0), 0);
+        const intCost = node.solution.reduce((sum, x, i) => sum + (x >= 0.99 ? costs[i] : 0), 0);
+        const intCount = node.solution.filter(x => x >= 0.99).length;
+        
+        if (intCost <= capacity && intCount <= maxItems && intValue > bestValue) {
+          bestValue = intValue;
+          bestSolution = node.solution.map(x => x >= 0.99 ? 1 : 0);
+        }
+        continue;
+      }
+      
+      // Branch on fractional variable
+      // Left branch: x[fractionalIdx] = 0
+      const leftFixed = new Map(node.fixed);
+      leftFixed.set(fractionalIdx, false);
+      const leftRelax = solveLPRelaxation(leftFixed);
+      if (leftRelax.upperBound > bestValue) {
+        queue.push({
+          fixed: leftFixed,
+          upperBound: leftRelax.upperBound,
+          solution: leftRelax.solution,
+          value: 0
+        });
+      }
+      
+      // Right branch: x[fractionalIdx] = 1
+      const rightFixed = new Map(node.fixed);
+      rightFixed.set(fractionalIdx, true);
+      const rightRelax = solveLPRelaxation(rightFixed);
+      if (rightRelax.upperBound > bestValue) {
+        queue.push({
+          fixed: rightFixed,
+          upperBound: rightRelax.upperBound,
+          solution: rightRelax.solution,
+          value: 0
+        });
       }
     }
     
-    return selected.reverse();
+    // Convert solution to items
+    return items.filter((_, idx) => bestSolution[idx] === 1);
   };
 
   // Get optimal build using 0/1 Knapsack
@@ -333,7 +428,7 @@ export default function Optimizer() {
       item => selectedCategory === 'all' || item.category === selectedCategory
     );
     
-    return solveKnapsack(availableItems, budget, 6, selectedCharacter);
+    return solveILP(availableItems, budget, 6, selectedCharacter);
   }, [items, selectedCharacter, budget, selectedCategory]);
 
   const recommendedItems = useMemo(() => {
