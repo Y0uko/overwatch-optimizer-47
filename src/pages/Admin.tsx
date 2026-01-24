@@ -404,27 +404,30 @@ export default function Admin() {
                               <label className="text-xs text-muted-foreground">Damage Bonus %</label>
                               <Input
                                 type="number"
-                                value={getDisplayValue(item, 'damage_bonus') ?? 0}
-                                onChange={(e) => updateLocalValue(item.id, 'damage_bonus', parseInt(e.target.value) || 0)}
+                                value={getDisplayValue(item, 'damage_bonus') || ''}
+                                onChange={(e) => updateLocalValue(item.id, 'damage_bonus', e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                                 className="h-8 text-sm"
+                                placeholder="0"
                               />
                             </div>
                             <div className="space-y-1">
                               <label className="text-xs text-muted-foreground">Health Bonus</label>
                               <Input
                                 type="number"
-                                value={getDisplayValue(item, 'health_bonus') ?? 0}
-                                onChange={(e) => updateLocalValue(item.id, 'health_bonus', parseInt(e.target.value) || 0)}
+                                value={getDisplayValue(item, 'health_bonus') || ''}
+                                onChange={(e) => updateLocalValue(item.id, 'health_bonus', e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                                 className="h-8 text-sm"
+                                placeholder="0"
                               />
                             </div>
                             <div className="space-y-1">
                               <label className="text-xs text-muted-foreground">Ability Power %</label>
                               <Input
                                 type="number"
-                                value={getDisplayValue(item, 'ability_power') ?? 0}
-                                onChange={(e) => updateLocalValue(item.id, 'ability_power', parseInt(e.target.value) || 0)}
+                                value={getDisplayValue(item, 'ability_power') || ''}
+                                onChange={(e) => updateLocalValue(item.id, 'ability_power', e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                                 className="h-8 text-sm"
+                                placeholder="0"
                               />
                             </div>
                           </div>
@@ -439,11 +442,12 @@ export default function Admin() {
                                 </label>
                                 <Input
                                   type="number"
-                                  value={(getDisplayValue(item, key) as number | null) ?? 0}
-                                  onChange={(e) => updateLocalValue(item.id, key, parseInt(e.target.value) || 0)}
+                                  value={(getDisplayValue(item, key) as number | null) || ''}
+                                  onChange={(e) => updateLocalValue(item.id, key, e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                                   className="h-8 text-sm"
                                   min={0}
                                   max={100}
+                                  placeholder="0"
                                 />
                               </div>
                             ))}
