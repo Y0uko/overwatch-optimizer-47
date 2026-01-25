@@ -10,6 +10,7 @@ import { Item, ItemCategory, ItemRarity } from '@/types/database';
 import { Settings, Search, Save, Loader2, Package, AlertCircle, ChevronDown, ChevronUp, ShieldX } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PerkBadge, PerkType } from '@/components/ui/PerkBadge';
+import { AddItemDialog } from '@/components/admin/AddItemDialog';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -68,23 +69,21 @@ export default function Admin() {
     checkAdminRole();
   }, []);
 
-  useEffect(() => {
-    async function fetchItems() {
-      if (isAdmin === false) return;
-      
-      const { data, error } = await supabase
-        .from('items')
-        .select('*')
-        .order('name');
-      
-      if (error) {
-        toast({ title: 'Error loading items', description: error.message, variant: 'destructive' });
-      } else {
-        setItems((data as Item[]) || []);
-      }
-      setLoading(false);
-    }
+  const fetchItems = async () => {
+    const { data, error } = await supabase
+      .from('items')
+      .select('*')
+      .order('name');
     
+    if (error) {
+      toast({ title: 'Error loading items', description: error.message, variant: 'destructive' });
+    } else {
+      setItems((data as Item[]) || []);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     if (isAdmin === true) {
       fetchItems();
     } else if (isAdmin === false) {
@@ -223,11 +222,14 @@ export default function Admin() {
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <CardTitle>Item Manager</CardTitle>
-                <CardDescription>
-                  Edit items below, then save all changes at once.
-                </CardDescription>
+              <div className="flex items-center gap-3">
+                <div>
+                  <CardTitle>Item Manager</CardTitle>
+                  <CardDescription>
+                    Edit items below, then save all changes at once.
+                  </CardDescription>
+                </div>
+                <AddItemDialog onItemAdded={fetchItems} />
               </div>
               
               {/* Bulk Actions Bar */}
