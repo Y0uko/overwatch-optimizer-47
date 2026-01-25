@@ -9,9 +9,10 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ItemCard } from '@/components/ItemCard';
 import { CharacterCard } from '@/components/CharacterCard';
 import { BuildCalculator } from '@/components/BuildCalculator';
+import { RoundHistory, RoundEntry } from '@/components/RoundHistory';
 import { supabase } from '@/integrations/supabase/client';
 import { Character, Item, ItemCategory } from '@/types/database';
-import { Calculator, Coins, Zap, History, Clock, Loader2, Sword, Sparkles, Shield, Wrench, Package, X, Trash2, RefreshCw } from 'lucide-react';
+import { Calculator, Coins, Zap, Loader2, Sword, Sparkles, Shield, Wrench, Package, Trash2, Plus, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/contexts/TranslationContext';
 
@@ -32,12 +33,7 @@ export default function Optimizer() {
   const [round, setRound] = useState(1);
   const [selectedItems, setSelectedItems] = useState<Item[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<ItemCategory | 'all'>('all');
-  const [optimizationHistory, setOptimizationHistory] = useState<Array<{
-    character: Character;
-    items: Item[];
-    totalCost: number;
-    timestamp: Date;
-  }>>([]);
+  const [roundHistory, setRoundHistory] = useState<RoundEntry[]>([]);
 
   const { toast } = useToast();
 
@@ -462,24 +458,41 @@ export default function Optimizer() {
 
   // totalCost already calculated above
 
-  // Add to history when items are selected
-  const addToHistory = () => {
-    if (!selectedCharacter || selectedItems.length === 0) return;
+  // Add round to history with complete budget tracking
+  const saveRound = () => {
+    if (!selectedCharacter) return;
     
-    const newEntry = {
+    const newEntry: RoundEntry = {
+      round,
       character: selectedCharacter,
       items: [...selectedItems],
-      totalCost,
+      budgetAtStart: budget,
+      budgetSpent: totalCost,
+      budgetRemaining: remainingBudget,
       timestamp: new Date(),
     };
     
-    setOptimizationHistory(prev => [newEntry, ...prev.slice(0, 9)]); // Keep last 10
-    toast({ title: t('optimizer.addedToHistory') });
+    setRoundHistory(prev => [newEntry, ...prev.slice(0, 29)]); // Keep last 30 rounds
+    
+    // Auto-advance to next round with remaining budget carried over
+    const nextRound = Math.min(round + 1, 7);
+    setRound(nextRound);
+    setBudget(remainingBudget + 600); // Base income per round
+    setSelectedItems([]);
+    
+    toast({ title: `Round ${round} saved! Starting round ${nextRound}` });
   };
 
-  const loadFromHistory = (entry: typeof optimizationHistory[0]) => {
+  const loadFromHistory = (entry: RoundEntry) => {
     setSelectedCharacter(entry.character);
     setSelectedItems(entry.items);
+    setBudget(entry.budgetAtStart);
+    setRound(entry.round);
+  };
+
+  const clearRoundHistory = () => {
+    setRoundHistory([]);
+    toast({ title: 'Round history cleared' });
   };
 
   if (loading) {
@@ -622,7 +635,7 @@ export default function Optimizer() {
                         }}
                         className="gap-1.5"
                       >
-                        <RefreshCw className="h-3.5 w-3.5" />
+                        <RotateCcw className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline">{t('optimizer.changeHero')}</span>
                       </Button>
                     </div>
@@ -728,12 +741,12 @@ export default function Optimizer() {
                 {/* Build Calculator */}
                 <BuildCalculator character={selectedCharacter} items={selectedItems} onRemoveItem={removeItem} />
                 
-                {selectedItems.length > 0 && (
+                {selectedCharacter && (
                   <div className="flex gap-2">
-                    <Button onClick={addToHistory} className="flex-1 gap-2 h-9 sm:h-10 text-xs sm:text-sm">
-                      <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      <span className="hidden sm:inline">{t('optimizer.saveToHistory')}</span>
-                      <span className="sm:hidden">{t('optimizer.save')}</span>
+                    <Button onClick={saveRound} className="flex-1 gap-2 h-9 sm:h-10 text-xs sm:text-sm">
+                      <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">Save Round {round}</span>
+                      <span className="sm:hidden">Save R{round}</span>
                     </Button>
                     <Button onClick={clearBuild} variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10">
                       <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -811,56 +824,14 @@ export default function Optimizer() {
               </CardContent>
             </Card>
 
-            {/* Optimization History */}
-            <Card className="mt-4 sm:mt-6">
-              <CardHeader className="pb-2 sm:pb-4">
-                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                  {t('optimizer.optimizationHistory')}
-                </CardTitle>
-                <CardDescription className="text-xs sm:text-sm">
-                  {t('optimizer.recentOptimizations')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-3 sm:p-6">
-                {optimizationHistory.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    {t('optimizer.noOptimizationsYet')}
-                  </div>
-                ) : (
-                  <ScrollArea className="h-[200px]">
-                    <div className="space-y-3">
-                      {optimizationHistory.map((entry, index) => (
-                        <button
-                          key={index}
-                          onClick={() => loadFromHistory(entry)}
-                          className="w-full p-3 rounded-lg border border-border bg-muted/50 hover:bg-muted transition-all text-left"
-                        >
-                          <div className="flex items-center gap-3">
-                            {entry.character.image_url && (
-                              <img 
-                                src={entry.character.image_url} 
-                                alt={entry.character.name}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">{entry.character.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {entry.items.length} {t('optimizer.items')} • {entry.totalCost} {t('optimizer.credits')}
-                              </div>
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {entry.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                )}
-              </CardContent>
-            </Card>
+            {/* Round History Component */}
+            <div className="mt-4 sm:mt-6">
+              <RoundHistory 
+                history={roundHistory} 
+                onLoadRound={loadFromHistory} 
+                onClearHistory={clearRoundHistory}
+              />
+            </div>
           </div>
         </div>
       </div>
