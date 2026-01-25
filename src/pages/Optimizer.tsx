@@ -272,314 +272,122 @@ export default function Optimizer() {
     return (damageValue + survivalValue + utilityValue + effectSynergy) * roleMultiplier * rarityBonus;
   };
 
-  // Integer Linear Programming (ILP) using Branch-and-Bound
-  // Maximize: Σ(value[i] * x[i]) where x[i] ∈ {0,1}
-  // Subject to: Σ(cost[i] * x[i]) <= budget
-  //             Σ(x[i]) <= maxItems
+  // 3D Dynamic Programming for Build Optimization
+  // Dimensions: [item index][budget used][item count]
+  // Maximize: total value
+  // Subject to: total cost <= budget, item count <= maxItems
   
-  interface ILPNode {
-    fixed: Map<number, boolean>; // index -> 0 or 1
-    upperBound: number;
-    solution: number[];
-    value: number;
-  }
-
-  const solveILP = (
+  const solve3DDP = (
     items: Item[], 
     capacity: number, 
     maxItems: number,
     character: Character
   ): Item[] => {
     const n = items.length;
-    if (n === 0 || capacity <= 0) return [];
+    if (n === 0 || capacity <= 0 || maxItems <= 0) return [];
     
-    // ILP Parameters - Tuned for tighter solutions
-    const MIP_GAP = 0.001; // 0.1% gap (very tight optimality tolerance)
-    const HEURISTIC_FREQUENCY = 3; // Run heuristics every 3 nodes
-    const MAX_ITERATIONS = 15000; // Increased iteration limit
-    const PROBING_DEPTH = 3; // Depth for probing heuristic
-    
-    // Pre-compute values for all items
-    const values = items.map(item => getItemValue(item, character));
+    // Pre-compute values and costs
+    const values = items.map(item => Math.round(getItemValue(item, character) * 100));
     const costs = items.map(item => item.cost);
     
-    // Efficiency ratio for greedy heuristics
-    const efficiencyRatio = items.map((_, idx) => 
-      costs[idx] > 0 ? values[idx] / costs[idx] : Infinity
+    // Scale budget for efficiency (use increments of 50 to reduce memory)
+    const BUDGET_SCALE = 50;
+    const scaledCapacity = Math.floor(capacity / BUDGET_SCALE) + 1;
+    const scaledCosts = costs.map(c => Math.floor(c / BUDGET_SCALE));
+    
+    // 3D DP table: dp[budget][itemCount] = { value, lastItem, prevBudget, prevCount }
+    // We use a rolling approach for items to save memory
+    // dp[b][k] represents max value achievable with budget b*BUDGET_SCALE and k items
+    
+    type DPCell = {
+      value: number;
+      items: number[]; // indices of selected items
+    };
+    
+    // Initialize DP table
+    const dp: DPCell[][] = Array.from({ length: scaledCapacity + 1 }, () =>
+      Array.from({ length: maxItems + 1 }, () => ({ value: -1, items: [] }))
     );
     
-    // Solve LP relaxation (fractional knapsack) to get upper bound
-    const solveLPRelaxation = (fixed: Map<number, boolean>): { upperBound: number; solution: number[] } => {
-      const solution = new Array(n).fill(0);
-      let remainingCapacity = capacity;
-      let remainingSlots = maxItems;
-      let totalValue = 0;
-      
-      // Apply fixed variables
-      for (const [idx, val] of fixed) {
-        solution[idx] = val ? 1 : 0;
-        if (val) {
-          remainingCapacity -= costs[idx];
-          remainingSlots -= 1;
-          totalValue += values[idx];
-        }
-      }
-      
-      if (remainingCapacity < 0 || remainingSlots < 0) {
-        return { upperBound: -Infinity, solution };
-      }
-      
-      // Sort unfixed items by value-to-weight ratio (efficiency)
-      const unfixedItems = items
-        .map((_, idx) => idx)
-        .filter(idx => !fixed.has(idx))
-        .map(idx => ({ idx, ratio: efficiencyRatio[idx] }))
-        .sort((a, b) => b.ratio - a.ratio);
-      
-      for (const { idx } of unfixedItems) {
-        if (remainingSlots <= 0) break;
-        
-        if (costs[idx] <= remainingCapacity) {
-          solution[idx] = 1;
-          remainingCapacity -= costs[idx];
-          remainingSlots -= 1;
-          totalValue += values[idx];
-        } else if (remainingCapacity > 0) {
-          // Fractional relaxation (for upper bound only)
-          const fraction = remainingCapacity / costs[idx];
-          solution[idx] = fraction;
-          totalValue += values[idx] * fraction;
-          remainingCapacity = 0;
-        }
-      }
-      
-      return { upperBound: totalValue, solution };
-    };
+    // Base case: 0 budget, 0 items = 0 value
+    dp[0][0] = { value: 0, items: [] };
     
-    // Greedy heuristic to find feasible solutions quickly
-    const greedyHeuristic = (fixed: Map<number, boolean>, strategy: 'efficiency' | 'value' | 'hybrid'): { value: number; solution: number[] } => {
-      const solution = new Array(n).fill(0);
-      let remainingCapacity = capacity;
-      let remainingSlots = maxItems;
-      let totalValue = 0;
+    // Fill DP table - iterate through each item
+    for (let i = 0; i < n; i++) {
+      const itemCost = scaledCosts[i];
+      const itemValue = values[i];
       
-      // Apply fixed variables
-      for (const [idx, val] of fixed) {
-        solution[idx] = val ? 1 : 0;
-        if (val) {
-          remainingCapacity -= costs[idx];
-          remainingSlots -= 1;
-          totalValue += values[idx];
+      // Skip items that cost more than total budget
+      if (itemCost > scaledCapacity) continue;
+      
+      // Traverse backwards to avoid using same item twice
+      for (let b = scaledCapacity; b >= itemCost; b--) {
+        for (let k = maxItems; k >= 1; k--) {
+          const prevBudget = b - itemCost;
+          const prevCount = k - 1;
+          
+          // Check if previous state is valid
+          if (prevBudget >= 0 && dp[prevBudget][prevCount].value >= 0) {
+            const newValue = dp[prevBudget][prevCount].value + itemValue;
+            
+            // Update if this gives better value
+            if (newValue > dp[b][k].value) {
+              dp[b][k] = {
+                value: newValue,
+                items: [...dp[prevBudget][prevCount].items, i]
+              };
+            }
+          }
         }
-      }
-      
-      if (remainingCapacity < 0 || remainingSlots < 0) {
-        return { value: -Infinity, solution };
-      }
-      
-      // Get unfixed items and sort by strategy
-      let unfixedItems = items
-        .map((_, idx) => idx)
-        .filter(idx => !fixed.has(idx) && costs[idx] <= remainingCapacity);
-      
-      if (strategy === 'efficiency') {
-        unfixedItems.sort((a, b) => efficiencyRatio[b] - efficiencyRatio[a]);
-      } else if (strategy === 'value') {
-        unfixedItems.sort((a, b) => values[b] - values[a]);
-      } else {
-        // Hybrid: weighted combination
-        unfixedItems.sort((a, b) => 
-          (values[b] * 0.6 + efficiencyRatio[b] * 100 * 0.4) - 
-          (values[a] * 0.6 + efficiencyRatio[a] * 100 * 0.4)
-        );
-      }
-      
-      for (const idx of unfixedItems) {
-        if (remainingSlots <= 0) break;
-        if (costs[idx] <= remainingCapacity) {
-          solution[idx] = 1;
-          remainingCapacity -= costs[idx];
-          remainingSlots -= 1;
-          totalValue += values[idx];
-        }
-      }
-      
-      return { value: totalValue, solution };
-    };
-    
-    // Probing heuristic - try fixing promising variables
-    const probingHeuristic = (fixed: Map<number, boolean>, bestValue: number): { value: number; solution: number[] } | null => {
-      const unfixedItems = items
-        .map((_, idx) => idx)
-        .filter(idx => !fixed.has(idx))
-        .sort((a, b) => efficiencyRatio[b] - efficiencyRatio[a])
-        .slice(0, PROBING_DEPTH);
-      
-      let bestProbe = { value: bestValue, solution: new Array(n).fill(0) };
-      
-      for (const probeIdx of unfixedItems) {
-        const probeFixed = new Map(fixed);
-        probeFixed.set(probeIdx, true);
-        
-        const result = greedyHeuristic(probeFixed, 'hybrid');
-        if (result.value > bestProbe.value) {
-          bestProbe = result;
-        }
-      }
-      
-      return bestProbe.value > bestValue ? bestProbe : null;
-    };
-    
-    // RINS-like heuristic (Relaxation Induced Neighborhood Search)
-    const rinsHeuristic = (lpSolution: number[], bestSolution: number[], fixed: Map<number, boolean>): { value: number; solution: number[] } | null => {
-      const newFixed = new Map(fixed);
-      
-      // Fix variables where LP and incumbent agree
-      for (let i = 0; i < n; i++) {
-        if (fixed.has(i)) continue;
-        if (lpSolution[i] >= 0.99 && bestSolution[i] === 1) {
-          newFixed.set(i, true);
-        } else if (lpSolution[i] <= 0.01 && bestSolution[i] === 0) {
-          newFixed.set(i, false);
-        }
-      }
-      
-      if (newFixed.size <= fixed.size + 2) return null;
-      
-      return greedyHeuristic(newFixed, 'efficiency');
-    };
-    
-    // Branch-and-Bound algorithm with enhanced heuristics
-    let bestValue = -Infinity;
-    let bestSolution: number[] = new Array(n).fill(0);
-    
-    // Initial greedy solutions (run multiple strategies)
-    const strategies: ('efficiency' | 'value' | 'hybrid')[] = ['efficiency', 'value', 'hybrid'];
-    for (const strategy of strategies) {
-      const greedyResult = greedyHeuristic(new Map(), strategy);
-      if (greedyResult.value > bestValue) {
-        bestValue = greedyResult.value;
-        bestSolution = greedyResult.solution;
       }
     }
     
-    // Priority queue (max-heap by upper bound)
-    const queue: ILPNode[] = [];
+    // Find the best solution across all valid states
+    let bestValue = -1;
+    let bestItems: number[] = [];
     
-    // Initial node
-    const initialRelax = solveLPRelaxation(new Map());
-    queue.push({
-      fixed: new Map(),
-      upperBound: initialRelax.upperBound,
-      solution: initialRelax.solution,
-      value: 0
-    });
+    for (let b = 0; b <= scaledCapacity; b++) {
+      for (let k = 0; k <= maxItems; k++) {
+        // Verify actual cost fits in budget (accounting for scaling)
+        const actualCost = dp[b][k].items.reduce((sum, idx) => sum + costs[idx], 0);
+        
+        if (dp[b][k].value > bestValue && actualCost <= capacity) {
+          bestValue = dp[b][k].value;
+          bestItems = dp[b][k].items;
+        }
+      }
+    }
     
-    let iterations = 0;
-    let heuristicCounter = 0;
-    
-    while (queue.length > 0 && iterations < MAX_ITERATIONS) {
-      iterations++;
-      heuristicCounter++;
+    // Refinement pass: try to fit additional items in remaining budget
+    if (bestItems.length < maxItems) {
+      const selectedSet = new Set(bestItems);
+      const currentCost = bestItems.reduce((sum, idx) => sum + costs[idx], 0);
+      const remainingBudget = capacity - currentCost;
+      const remainingSlots = maxItems - bestItems.length;
       
-      // Get node with highest upper bound
-      queue.sort((a, b) => b.upperBound - a.upperBound);
-      const node = queue.shift()!;
+      // Find items that fit in remaining budget, sorted by value
+      const candidates = items
+        .map((_, idx) => ({ idx, value: values[idx], cost: costs[idx] }))
+        .filter(item => !selectedSet.has(item.idx) && item.cost <= remainingBudget)
+        .sort((a, b) => b.value - a.value);
       
-      // Check MIP gap - terminate if gap is within tolerance
-      if (bestValue > 0 && (node.upperBound - bestValue) / bestValue <= MIP_GAP) {
-        break; // Gap is tight enough
-      }
-      
-      // Prune if upper bound is worse than best found
-      if (node.upperBound <= bestValue) continue;
-      
-      // Run heuristics frequently
-      if (heuristicCounter >= HEURISTIC_FREQUENCY) {
-        heuristicCounter = 0;
-        
-        // Greedy heuristic from current node
-        const greedyResult = greedyHeuristic(node.fixed, 'hybrid');
-        if (greedyResult.value > bestValue) {
-          bestValue = greedyResult.value;
-          bestSolution = greedyResult.solution;
-        }
-        
-        // Probing heuristic
-        const probeResult = probingHeuristic(node.fixed, bestValue);
-        if (probeResult && probeResult.value > bestValue) {
-          bestValue = probeResult.value;
-          bestSolution = probeResult.solution;
-        }
-        
-        // RINS heuristic when we have an incumbent
-        if (bestValue > 0) {
-          const rinsResult = rinsHeuristic(node.solution, bestSolution, node.fixed);
-          if (rinsResult && rinsResult.value > bestValue) {
-            bestValue = rinsResult.value;
-            bestSolution = rinsResult.solution;
-          }
-        }
-      }
-      
-      // Check if solution is integral
-      let fractionalIdx = -1;
-      let maxFraction = 0;
-      for (let i = 0; i < n; i++) {
-        if (!node.fixed.has(i) && node.solution[i] > 0.001 && node.solution[i] < 0.999) {
-          // Most fractional branching - choose variable closest to 0.5
-          const fractionality = Math.abs(node.solution[i] - 0.5);
-          if (fractionalIdx === -1 || fractionality < maxFraction) {
-            fractionalIdx = i;
-            maxFraction = fractionality;
-          }
-        }
-      }
-      
-      if (fractionalIdx === -1) {
-        // All integer solution - check if it's the best
-        const intValue = node.solution.reduce((sum, x, i) => sum + (x >= 0.99 ? values[i] : 0), 0);
-        const intCost = node.solution.reduce((sum, x, i) => sum + (x >= 0.99 ? costs[i] : 0), 0);
-        const intCount = node.solution.filter(x => x >= 0.99).length;
-        
-        if (intCost <= capacity && intCount <= maxItems && intValue > bestValue) {
-          bestValue = intValue;
-          bestSolution = node.solution.map(x => x >= 0.99 ? 1 : 0);
-        }
-        continue;
-      }
-      
-      // Strong branching: evaluate both branches before adding
-      const leftFixed = new Map(node.fixed);
-      leftFixed.set(fractionalIdx, false);
-      const leftRelax = solveLPRelaxation(leftFixed);
-      
-      const rightFixed = new Map(node.fixed);
-      rightFixed.set(fractionalIdx, true);
-      const rightRelax = solveLPRelaxation(rightFixed);
-      
-      // Add nodes in order of upper bound (best first)
-      const candidates = [
-        { fixed: leftFixed, relax: leftRelax },
-        { fixed: rightFixed, relax: rightRelax }
-      ].filter(c => c.relax.upperBound > bestValue)
-       .sort((a, b) => b.relax.upperBound - a.relax.upperBound);
+      let budgetLeft = remainingBudget;
+      let slotsLeft = remainingSlots;
       
       for (const candidate of candidates) {
-        queue.push({
-          fixed: candidate.fixed,
-          upperBound: candidate.relax.upperBound,
-          solution: candidate.relax.solution,
-          value: 0
-        });
+        if (slotsLeft <= 0 || budgetLeft < candidate.cost) continue;
+        
+        bestItems.push(candidate.idx);
+        budgetLeft -= candidate.cost;
+        slotsLeft--;
       }
     }
     
-    // Convert solution to items
-    return items.filter((_, idx) => bestSolution[idx] === 1);
+    // Convert indices back to items
+    return bestItems.map(idx => items[idx]);
   };
 
-  // Get optimal build using 0/1 Knapsack
+  // Get optimal build using 3D Dynamic Programming
   const optimalBuild = useMemo(() => {
     if (!selectedCharacter) return [];
     
@@ -587,7 +395,7 @@ export default function Optimizer() {
       item => selectedCategory === 'all' || item.category === selectedCategory
     );
     
-    return solveILP(availableItems, budget, 6, selectedCharacter);
+    return solve3DDP(availableItems, budget, 6, selectedCharacter);
   }, [items, selectedCharacter, budget, selectedCategory]);
 
   const recommendedItems = useMemo(() => {
