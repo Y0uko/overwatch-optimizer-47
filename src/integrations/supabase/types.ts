@@ -42,6 +42,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "build_items_build_id_fkey"
+            columns: ["build_id"]
+            isOneToOne: false
+            referencedRelation: "user_builds_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "build_items_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
@@ -240,7 +247,47 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_builds_public: {
+        Row: {
+          character_id: string | null
+          created_at: string | null
+          id: string | null
+          is_public: boolean | null
+          name: string | null
+          notes: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          character_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_public?: boolean | null
+          name?: string | null
+          notes?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          character_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_public?: boolean | null
+          name?: string | null
+          notes?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_builds_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {
