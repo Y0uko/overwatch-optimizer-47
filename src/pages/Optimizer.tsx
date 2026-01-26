@@ -24,16 +24,19 @@ const categoryIcons: Record<ItemCategory | 'all', React.ReactNode> = {
   gadget: <Wrench className="h-4 w-4" />,
 };
 
+type StatPriority = 'ability' | 'damage' | 'survival';
+
 export default function Optimizer() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
-  const [budget, setBudget] = useState(3500);
+  const [budget, setBudget] = useState<number | ''>(3500);
   const [round, setRound] = useState(1);
   const [selectedItems, setSelectedItems] = useState<Item[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<ItemCategory | 'all'>('all');
   const [roundHistory, setRoundHistory] = useState<RoundEntry[]>([]);
+  const [statPriority, setStatPriority] = useState<StatPriority>('ability');
 
   const { toast } = useToast();
 
@@ -52,7 +55,8 @@ export default function Optimizer() {
 
   // Calculate total cost first, then remaining budget
   const totalCost = selectedItems.reduce((sum, item) => sum + item.cost, 0);
-  const remainingBudget = budget - totalCost;
+  const effectiveBudget = budget === '' ? 0 : budget;
+  const remainingBudget = effectiveBudget - totalCost;
 
   // Character ability tags based on descriptions
   const getCharacterTags = (character: Character): string[] => {
@@ -273,16 +277,7 @@ export default function Optimizer() {
   // Dimensions: [budget used][item count] with item iteration
   // Subject to: total cost <= budget, item count <= maxItems
   
-  type StatPriority = 'ability' | 'damage' | 'survival';
-  
-  const getStatPriority = (character: Character): StatPriority => {
-    switch (character.role) {
-      case 'support': return 'ability';
-      case 'damage': return 'damage';
-      case 'tank': return 'survival';
-      default: return 'damage';
-    }
-  };
+  // User-selected stat priority is used instead of character role-based
   
   const getItemStatValue = (item: Item, priority: StatPriority): number => {
     switch (priority) {
@@ -305,12 +300,10 @@ export default function Optimizer() {
     items: Item[], 
     capacity: number, 
     maxItems: number,
-    character: Character
+    priority: StatPriority
   ): Item[] => {
     const n = items.length;
     if (n === 0 || capacity <= 0 || maxItems <= 0) return [];
-    
-    const priority = getStatPriority(character);
     
     // Pre-compute stat values and costs
     // Use stat-focused values for optimization
@@ -451,8 +444,8 @@ export default function Optimizer() {
       item => selectedCategory === 'all' || item.category === selectedCategory
     );
     
-    return solve3DDP(availableItems, budget, 6, selectedCharacter);
-  }, [items, selectedCharacter, budget, selectedCategory]);
+    return solve3DDP(availableItems, effectiveBudget, 6, statPriority);
+  }, [items, selectedCharacter, effectiveBudget, selectedCategory, statPriority]);
 
   const recommendedItems = useMemo(() => {
     if (!selectedCharacter) return [];
@@ -526,7 +519,7 @@ export default function Optimizer() {
       round,
       character: selectedCharacter,
       items: [...selectedItems],
-      budgetAtStart: budget,
+      budgetAtStart: effectiveBudget,
       budgetSpent: totalCost,
       budgetRemaining: remainingBudget,
       timestamp: new Date(),
@@ -534,10 +527,10 @@ export default function Optimizer() {
     
     setRoundHistory(prev => [newEntry, ...prev.slice(0, 29)]); // Keep last 30 rounds
     
-    // Auto-advance to next round with remaining budget carried over
+    // Auto-advance to next round with 9000 added to last budget
     const nextRound = Math.min(round + 1, 7);
     setRound(nextRound);
-    setBudget(remainingBudget + 600); // Base income per round
+    setBudget(effectiveBudget + 9000); // Add 9000 to last inputted budget
     setSelectedItems([]);
     
     toast({ title: `Round ${round} saved! Starting round ${nextRound}` });
@@ -733,10 +726,58 @@ export default function Optimizer() {
                           type="number"
                           min={0}
                           step={500}
-                          value={budget}
-                          onChange={(e) => setBudget(parseInt(e.target.value) || 0)}
+                          value={budget === '' ? '' : budget}
+                          placeholder="0"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              setBudget('');
+                            } else {
+                              setBudget(parseInt(val) || 0);
+                            }
+                          }}
                           className="pl-10 h-9 sm:h-10"
                         />
+                      </div>
+                      
+                      {/* Stat Priority Selector */}
+                      <div className="mt-2 sm:mt-3">
+                        <Label className="text-sm mb-1.5 block">Stat Priority</Label>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => setStatPriority('ability')}
+                            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
+                              statPriority === 'ability'
+                                ? 'bg-rarity-epic text-white ring-2 ring-rarity-epic'
+                                : 'bg-muted hover:bg-muted/80 text-foreground'
+                            }`}
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            Ability
+                          </button>
+                          <button
+                            onClick={() => setStatPriority('damage')}
+                            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
+                              statPriority === 'damage'
+                                ? 'bg-role-damage text-white ring-2 ring-role-damage'
+                                : 'bg-muted hover:bg-muted/80 text-foreground'
+                            }`}
+                          >
+                            <Sword className="h-3 w-3" />
+                            Weapon
+                          </button>
+                          <button
+                            onClick={() => setStatPriority('survival')}
+                            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
+                              statPriority === 'survival'
+                                ? 'bg-role-tank text-white ring-2 ring-role-tank'
+                                : 'bg-muted hover:bg-muted/80 text-foreground'
+                            }`}
+                          >
+                            <Shield className="h-3 w-3" />
+                            Survival
+                          </button>
+                        </div>
                       </div>
                       
                       {/* Budget Status */}
@@ -754,7 +795,7 @@ export default function Optimizer() {
                         <div className="w-full bg-muted rounded-full h-1.5 sm:h-2 overflow-hidden">
                           <div 
                             className={`h-full transition-all ${remainingBudget < 0 ? 'bg-destructive' : 'bg-primary'}`}
-                            style={{ width: `${Math.min(100, (totalCost / budget) * 100)}%` }}
+                            style={{ width: `${Math.min(100, effectiveBudget > 0 ? (totalCost / effectiveBudget) * 100 : 0)}%` }}
                           />
                         </div>
                         <div className="text-xs text-muted-foreground mt-1 text-center">
