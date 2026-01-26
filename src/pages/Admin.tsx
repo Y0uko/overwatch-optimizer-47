@@ -47,7 +47,23 @@ export default function Admin() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Check if user is admin
+  /**
+   * SECURITY NOTE: Client-side admin check for UX purposes only.
+   * 
+   * This check controls UI visibility, NOT actual authorization.
+   * All data operations (INSERT, UPDATE, DELETE on items/characters) are
+   * protected by Row Level Security (RLS) policies in the database using
+   * the has_role() SECURITY DEFINER function.
+   * 
+   * Even if a user bypasses this UI check, they cannot modify data without
+   * the 'admin' role because:
+   * 1. RLS policies on 'items' table require has_role(auth.uid(), 'admin')
+   * 2. RLS policies on 'characters' table require has_role(auth.uid(), 'admin')
+   * 3. The user_roles table only allows users to SELECT their own roles
+   * 
+   * This is a defense-in-depth approach where the UI check provides good UX
+   * while RLS provides the actual security boundary.
+   */
   useEffect(() => {
     async function checkAdminRole() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -57,6 +73,7 @@ export default function Admin() {
         return;
       }
 
+      // UI-only check - actual authorization enforced by RLS policies
       const { data: roles } = await supabase
         .from('user_roles')
         .select('role')

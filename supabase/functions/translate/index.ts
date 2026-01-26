@@ -13,6 +13,10 @@ const corsHeaders = {
 const MAX_TEXTS = 100;
 const MAX_TEXT_LENGTH = 5000;
 
+// Rate limiting configuration
+const RATE_LIMIT_MAX_REQUESTS = 50; // Max requests per window
+const RATE_LIMIT_WINDOW_MINUTES = 60; // 1 hour window
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -28,20 +32,58 @@ serve(async (req) => {
       });
     }
 
-    // Verify the JWT token using Supabase auth
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    // Create Supabase client with user's auth
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
 
+    // Verify the JWT token
     const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(token);
     
     if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const userId = claimsData.claims.sub as string;
+    
+    // Rate limiting check using service role client
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: rateLimitAllowed, error: rateLimitError } = await supabaseService.rpc(
+      'check_rate_limit',
+      {
+        _user_id: userId,
+        _endpoint: 'translate',
+        _max_requests: RATE_LIMIT_MAX_REQUESTS,
+        _window_minutes: RATE_LIMIT_WINDOW_MINUTES
+      }
+    );
+
+    if (rateLimitError) {
+      // Log error but don't expose details to client
+      console.error('Rate limit check failed:', { status: 'error' });
+      // Continue without rate limiting if check fails (fail-open for availability)
+    } else if (rateLimitAllowed === false) {
+      // Get remaining time until window resets
+      const retryAfterSeconds = RATE_LIMIT_WINDOW_MINUTES * 60;
+      return new Response(JSON.stringify({ 
+        error: 'Rate limit exceeded. Please try again later.',
+        retryAfter: retryAfterSeconds
+      }), {
+        status: 429,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Retry-After': retryAfterSeconds.toString()
+        },
       });
     }
 
@@ -98,8 +140,9 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('DeepL API error:', errorText);
+      // Consume response body but don't log sensitive details
+      await response.text();
+      console.error('DeepL API error:', { status: response.status, statusText: response.statusText });
       return new Response(JSON.stringify({ error: 'Translation failed' }), {
         status: response.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -112,7 +155,11 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
-    console.error('Error in translate function:', error);
+    // Log minimal error info without exposing internal details
+    console.error('Error in translate function:', { 
+      type: error instanceof Error ? error.name : 'Unknown',
+      message: 'Internal error occurred'
+    });
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

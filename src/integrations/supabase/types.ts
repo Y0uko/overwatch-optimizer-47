@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_rate_limits: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          request_count: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          request_count?: number
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          request_count?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       build_items: {
         Row: {
           build_id: string
@@ -290,6 +317,25 @@ export type Database = {
       }
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          _endpoint: string
+          _max_requests?: number
+          _user_id: string
+          _window_minutes?: number
+        }
+        Returns: boolean
+      }
+      cleanup_rate_limits: { Args: never; Returns: undefined }
+      get_rate_limit_remaining: {
+        Args: {
+          _endpoint: string
+          _max_requests?: number
+          _user_id: string
+          _window_minutes?: number
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
