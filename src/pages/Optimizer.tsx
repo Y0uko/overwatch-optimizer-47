@@ -269,9 +269,37 @@ export default function Optimizer() {
   };
 
   // 3D Dynamic Programming for Build Optimization
-  // Dimensions: [item index][budget used][item count]
-  // Maximize: total value
+  // Priority: MAXIMIZE item count first, then maximize target stat (ability/damage/survival)
+  // Dimensions: [budget used][item count] with item iteration
   // Subject to: total cost <= budget, item count <= maxItems
+  
+  type StatPriority = 'ability' | 'damage' | 'survival';
+  
+  const getStatPriority = (character: Character): StatPriority => {
+    switch (character.role) {
+      case 'support': return 'ability';
+      case 'damage': return 'damage';
+      case 'tank': return 'survival';
+      default: return 'damage';
+    }
+  };
+  
+  const getItemStatValue = (item: Item, priority: StatPriority): number => {
+    switch (priority) {
+      case 'ability':
+        return (item.ability_power || 0) + 
+               (item.cooldown_reduction || 0) * 0.5 + 
+               (item.ability_lifesteal || 0) * 0.3;
+      case 'damage':
+        return (item.damage_bonus || 0) + 
+               (item.attack_speed || 0) * 0.4 + 
+               (item.weapon_lifesteal || 0) * 0.3;
+      case 'survival':
+        return (item.health_bonus || 0) * 0.1 + 
+               (item.shield_bonus || 0) * 0.15 + 
+               (item.armor_bonus || 0) * 0.2;
+    }
+  };
   
   const solve3DDP = (
     items: Item[], 
@@ -282,8 +310,11 @@ export default function Optimizer() {
     const n = items.length;
     if (n === 0 || capacity <= 0 || maxItems <= 0) return [];
     
-    // Pre-compute values and costs
-    const values = items.map(item => Math.round(getItemValue(item, character) * 100));
+    const priority = getStatPriority(character);
+    
+    // Pre-compute stat values and costs
+    // Use stat-focused values for optimization
+    const statValues = items.map(item => Math.round(getItemStatValue(item, priority) * 100));
     const costs = items.map(item => item.cost);
     
     // Scale budget for efficiency (use increments of 50 to reduce memory)
@@ -291,27 +322,25 @@ export default function Optimizer() {
     const scaledCapacity = Math.floor(capacity / BUDGET_SCALE) + 1;
     const scaledCosts = costs.map(c => Math.floor(c / BUDGET_SCALE));
     
-    // 3D DP table: dp[budget][itemCount] = { value, lastItem, prevBudget, prevCount }
-    // We use a rolling approach for items to save memory
-    // dp[b][k] represents max value achievable with budget b*BUDGET_SCALE and k items
-    
+    // DP table: dp[budget][itemCount] = { statValue, items }
+    // Priority: More items > Higher stat value
     type DPCell = {
-      value: number;
+      statValue: number;
       items: number[]; // indices of selected items
     };
     
     // Initialize DP table
     const dp: DPCell[][] = Array.from({ length: scaledCapacity + 1 }, () =>
-      Array.from({ length: maxItems + 1 }, () => ({ value: -1, items: [] }))
+      Array.from({ length: maxItems + 1 }, () => ({ statValue: -1, items: [] }))
     );
     
     // Base case: 0 budget, 0 items = 0 value
-    dp[0][0] = { value: 0, items: [] };
+    dp[0][0] = { statValue: 0, items: [] };
     
     // Fill DP table - iterate through each item
     for (let i = 0; i < n; i++) {
       const itemCost = scaledCosts[i];
-      const itemValue = values[i];
+      const itemStatValue = statValues[i];
       
       // Skip items that cost more than total budget
       if (itemCost > scaledCapacity) continue;
@@ -323,13 +352,20 @@ export default function Optimizer() {
           const prevCount = k - 1;
           
           // Check if previous state is valid
-          if (prevBudget >= 0 && dp[prevBudget][prevCount].value >= 0) {
-            const newValue = dp[prevBudget][prevCount].value + itemValue;
+          if (prevBudget >= 0 && dp[prevBudget][prevCount].statValue >= 0) {
+            const newStatValue = dp[prevBudget][prevCount].statValue + itemStatValue;
+            const newItemCount = k;
+            const currentItemCount = dp[b][k].items.length;
             
-            // Update if this gives better value
-            if (newValue > dp[b][k].value) {
+            // Priority: More items first, then higher stat value
+            const shouldUpdate = 
+              dp[b][k].statValue < 0 || // No solution yet
+              newItemCount > currentItemCount || // More items is better
+              (newItemCount === currentItemCount && newStatValue > dp[b][k].statValue); // Same items, better stats
+            
+            if (shouldUpdate) {
               dp[b][k] = {
-                value: newValue,
+                statValue: newStatValue,
                 items: [...dp[prevBudget][prevCount].items, i]
               };
             }
@@ -338,34 +374,56 @@ export default function Optimizer() {
       }
     }
     
-    // Find the best solution across all valid states
-    let bestValue = -1;
+    // Find the best solution: prioritize MAX ITEM COUNT, then MAX STAT VALUE
+    let bestItemCount = 0;
+    let bestStatValue = -1;
     let bestItems: number[] = [];
     
     for (let b = 0; b <= scaledCapacity; b++) {
       for (let k = 0; k <= maxItems; k++) {
+        if (dp[b][k].statValue < 0) continue;
+        
         // Verify actual cost fits in budget (accounting for scaling)
         const actualCost = dp[b][k].items.reduce((sum, idx) => sum + costs[idx], 0);
+        if (actualCost > capacity) continue;
         
-        if (dp[b][k].value > bestValue && actualCost <= capacity) {
-          bestValue = dp[b][k].value;
+        const itemCount = dp[b][k].items.length;
+        const statValue = dp[b][k].statValue;
+        
+        // Prioritize: more items > higher stat value
+        if (itemCount > bestItemCount || 
+            (itemCount === bestItemCount && statValue > bestStatValue)) {
+          bestItemCount = itemCount;
+          bestStatValue = statValue;
           bestItems = dp[b][k].items;
         }
       }
     }
     
     // Refinement pass: try to fit additional items in remaining budget
+    // Prioritize items with the target stat
     if (bestItems.length < maxItems) {
       const selectedSet = new Set(bestItems);
       const currentCost = bestItems.reduce((sum, idx) => sum + costs[idx], 0);
       const remainingBudget = capacity - currentCost;
       const remainingSlots = maxItems - bestItems.length;
       
-      // Find items that fit in remaining budget, sorted by value
+      // Find items that fit in remaining budget, sorted by stat value (prioritize target stat)
       const candidates = items
-        .map((_, idx) => ({ idx, value: values[idx], cost: costs[idx] }))
+        .map((item, idx) => ({ 
+          idx, 
+          statValue: statValues[idx], 
+          cost: costs[idx],
+          hasTargetStat: getItemStatValue(item, priority) > 0
+        }))
         .filter(item => !selectedSet.has(item.idx) && item.cost <= remainingBudget)
-        .sort((a, b) => b.value - a.value);
+        // Sort by: has target stat > stat value
+        .sort((a, b) => {
+          if (a.hasTargetStat !== b.hasTargetStat) {
+            return a.hasTargetStat ? -1 : 1;
+          }
+          return b.statValue - a.statValue;
+        });
       
       let budgetLeft = remainingBudget;
       let slotsLeft = remainingSlots;
@@ -379,8 +437,10 @@ export default function Optimizer() {
       }
     }
     
-    // Convert indices back to items
-    return bestItems.map(idx => items[idx]);
+    // Convert indices back to items, sorted by stat contribution
+    return bestItems
+      .map(idx => items[idx])
+      .sort((a, b) => getItemStatValue(b, priority) - getItemStatValue(a, priority));
   };
 
   // Get optimal build using 3D Dynamic Programming
