@@ -210,6 +210,80 @@ export type Database = {
         }
         Relationships: []
       }
+      round_history: {
+        Row: {
+          budget_at_start: number
+          budget_remaining: number
+          budget_spent: number
+          character_id: string
+          created_at: string
+          id: string
+          round_number: number
+          user_id: string
+        }
+        Insert: {
+          budget_at_start: number
+          budget_remaining: number
+          budget_spent: number
+          character_id: string
+          created_at?: string
+          id?: string
+          round_number: number
+          user_id: string
+        }
+        Update: {
+          budget_at_start?: number
+          budget_remaining?: number
+          budget_spent?: number
+          character_id?: string
+          created_at?: string
+          id?: string
+          round_number?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "round_history_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      round_history_items: {
+        Row: {
+          id: string
+          item_id: string
+          round_history_id: string
+        }
+        Insert: {
+          id?: string
+          item_id: string
+          round_history_id: string
+        }
+        Update: {
+          id?: string
+          item_id?: string
+          round_history_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "round_history_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "round_history_items_round_history_id_fkey"
+            columns: ["round_history_id"]
+            isOneToOne: false
+            referencedRelation: "round_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_builds: {
         Row: {
           character_id: string

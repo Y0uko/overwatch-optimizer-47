@@ -1,12 +1,14 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { Character, Item, ItemCategory } from '@/types/database';
-import { History, TrendingUp, Coins, Package, Sword, Sparkles, Shield, Wrench, Trash2 } from 'lucide-react';
+import { ItemCategory } from '@/types/database';
+import { RoundEntry } from '@/hooks/useRoundHistory';
+import { History, TrendingUp, Coins, Package, Sword, Sparkles, Shield, Wrench, Trash2, LogIn, Loader2 } from 'lucide-react';
 
 const categoryIcons: Record<ItemCategory, React.ReactNode> = {
   weapon: <Sword className="h-3 w-3" />,
@@ -15,18 +17,10 @@ const categoryIcons: Record<ItemCategory, React.ReactNode> = {
   gadget: <Wrench className="h-3 w-3" />,
 };
 
-export interface RoundEntry {
-  round: number;
-  character: Character;
-  items: Item[];
-  budgetAtStart: number;
-  budgetSpent: number;
-  budgetRemaining: number;
-  timestamp: Date;
-}
-
 interface RoundHistoryProps {
   history: RoundEntry[];
+  loading?: boolean;
+  isAuthenticated?: boolean;
   onLoadRound: (entry: RoundEntry) => void;
   onClearHistory: () => void;
 }
@@ -40,7 +34,7 @@ interface BudgetBracket {
   color: string;
 }
 
-export function RoundHistory({ history, onLoadRound, onClearHistory }: RoundHistoryProps) {
+export function RoundHistory({ history, loading, isAuthenticated = true, onLoadRound, onClearHistory }: RoundHistoryProps) {
   // Calculate budget frequency distribution
   const budgetStats = useMemo(() => {
     if (history.length === 0) return null;
@@ -75,7 +69,7 @@ export function RoundHistory({ history, onLoadRound, onClearHistory }: RoundHist
 
   // Item frequency across all rounds
   const itemFrequency = useMemo(() => {
-    const freq = new Map<string, { item: Item; count: number }>();
+    const freq = new Map<string, { item: typeof history[0]['items'][0]; count: number }>();
     
     history.forEach(entry => {
       entry.items.forEach(item => {
@@ -92,6 +86,55 @@ export function RoundHistory({ history, onLoadRound, onClearHistory }: RoundHist
       .sort((a, b) => b.count - a.count)
       .slice(0, 6);
   }, [history]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader className="pb-2 sm:pb-4">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <History className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            Round History
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-3 sm:p-6">
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show sign-in prompt when not authenticated
+  if (!isAuthenticated) {
+    return (
+      <Card>
+        <CardHeader className="pb-2 sm:pb-4">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <History className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            Round History
+          </CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
+            Track your economy over rounds
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-3 sm:p-6">
+          <div className="text-center py-6 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Sign in to save and sync your round history across devices.
+            </p>
+            <Button asChild variant="outline" className="gap-2">
+              <Link to="/auth">
+                <LogIn className="h-4 w-4" />
+                Sign In
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (history.length === 0) {
     return (

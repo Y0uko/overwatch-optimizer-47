@@ -9,7 +9,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ItemCard } from '@/components/ItemCard';
 import { CharacterCard } from '@/components/CharacterCard';
 import { BuildCalculator } from '@/components/BuildCalculator';
-import { RoundHistory, RoundEntry } from '@/components/RoundHistory';
+import { RoundHistory } from '@/components/RoundHistory';
+import { useRoundHistory, RoundEntry } from '@/hooks/useRoundHistory';
 import { supabase } from '@/integrations/supabase/client';
 import { Character, Item, ItemCategory } from '@/types/database';
 import { Calculator, Coins, Zap, Loader2, Sword, Sparkles, Shield, Wrench, Package, Trash2, Plus, RotateCcw } from 'lucide-react';
@@ -35,8 +36,15 @@ export default function Optimizer() {
   const [round, setRound] = useState(1);
   const [selectedItems, setSelectedItems] = useState<Item[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<ItemCategory | 'all'>('all');
-  const [roundHistory, setRoundHistory] = useState<RoundEntry[]>([]);
   const [statPriority, setStatPriority] = useState<StatPriority>('ability');
+
+  const { 
+    history: roundHistory, 
+    loading: historyLoading, 
+    isAuthenticated,
+    saveRound: saveRoundToDb,
+    clearHistory: clearRoundHistoryDb 
+  } = useRoundHistory();
 
   const { toast } = useToast();
 
@@ -512,28 +520,27 @@ export default function Optimizer() {
   // totalCost already calculated above
 
   // Add round to history with complete budget tracking
-  const saveRound = () => {
+  const saveRound = async () => {
     if (!selectedCharacter) return;
     
-    const newEntry: RoundEntry = {
+    const success = await saveRoundToDb({
       round,
       character: selectedCharacter,
       items: [...selectedItems],
       budgetAtStart: effectiveBudget,
       budgetSpent: totalCost,
       budgetRemaining: remainingBudget,
-      timestamp: new Date(),
-    };
+    });
     
-    setRoundHistory(prev => [newEntry, ...prev.slice(0, 29)]); // Keep last 30 rounds
-    
-    // Auto-advance to next round with 9000 added to last budget
-    const nextRound = Math.min(round + 1, 7);
-    setRound(nextRound);
-    setBudget(effectiveBudget + 9000); // Add 9000 to last inputted budget
-    setSelectedItems([]);
-    
-    toast({ title: `Round ${round} saved! Starting round ${nextRound}` });
+    if (success) {
+      // Auto-advance to next round with 9000 added to last budget
+      const nextRound = Math.min(round + 1, 7);
+      setRound(nextRound);
+      setBudget(effectiveBudget + 9000); // Add 9000 to last inputted budget
+      setSelectedItems([]);
+      
+      toast({ title: `Round ${round} saved! Starting round ${nextRound}` });
+    }
   };
 
   const loadFromHistory = (entry: RoundEntry) => {
@@ -544,8 +551,7 @@ export default function Optimizer() {
   };
 
   const clearRoundHistory = () => {
-    setRoundHistory([]);
-    toast({ title: 'Round history cleared' });
+    clearRoundHistoryDb();
   };
 
   if (loading) {
@@ -929,6 +935,8 @@ export default function Optimizer() {
             <div className="mt-4 sm:mt-6">
               <RoundHistory 
                 history={roundHistory} 
+                loading={historyLoading}
+                isAuthenticated={isAuthenticated}
                 onLoadRound={loadFromHistory} 
                 onClearHistory={clearRoundHistory}
               />
