@@ -90,40 +90,42 @@ export function Header() {
   const currentLanguage = languages.find(l => l.code === currentLang) || languages[0];
 
   return (
-    <header className="sticky top-0 z-50 glass">
+    <header className="sticky top-0 z-50 bg-card/40 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_4px_30px_rgba(0,0,0,0.3)]">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-xl font-bold">
-            <Zap className="h-6 w-6 text-primary" />
-            <span className="hidden sm:inline">Stadium Optimizer</span>
+          <Link to="/" className="flex items-center gap-2.5 text-xl font-bold group">
+            <div className="p-1.5 rounded-lg bg-primary/15 group-hover:bg-primary/25 transition-colors">
+              <Zap className="h-5 w-5 text-primary" />
+            </div>
+            <span className="hidden sm:inline bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Stadium Optimizer</span>
           </Link>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-6">
             <Link 
               to="/optimizer" 
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-all px-3 py-1.5 rounded-lg hover:bg-white/[0.06]"
             >
               {t('nav.optimizer')}
             </Link>
             <Link 
               to="/items" 
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-all px-3 py-1.5 rounded-lg hover:bg-white/[0.06]"
             >
               {t('nav.items')}
             </Link>
               {user && (
               <>
-                <Link 
-                  to="/builds" 
-                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  <Link 
+                    to="/builds" 
+                    className="text-muted-foreground hover:text-foreground transition-all px-3 py-1.5 rounded-lg hover:bg-white/[0.06]"
                 >
                   {t('nav.myBuilds')}
                 </Link>
                 {isAdmin && (
-                  <Link 
-                    to="/admin" 
-                    className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                    <Link 
+                      to="/admin" 
+                      className="text-muted-foreground hover:text-foreground transition-all px-3 py-1.5 rounded-lg hover:bg-white/[0.06] flex items-center gap-1"
                   >
                     <Settings className="h-4 w-4" />
                     {t('nav.admin')}

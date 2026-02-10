@@ -350,7 +350,7 @@ export function BuildCalculator({ character, items, onRemoveItem }: BuildCalcula
             {items.map((item) => (
               <div 
                 key={item.id}
-                className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-lg bg-muted/50 group hover:bg-muted transition-colors"
+                className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] group hover:bg-white/[0.06] transition-all duration-200"
               >
                 {onRemoveItem && (
                   <Button 

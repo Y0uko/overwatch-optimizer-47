@@ -36,8 +36,8 @@ export function ItemCard({ item, selected, onSelect, showStats = true, compact =
   return (
     <Card 
       className={cn(
-        'transition-all cursor-pointer hover:shadow-md',
-        selected && 'ring-2 ring-primary shadow-lg'
+        'transition-all duration-200 cursor-pointer hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:border-white/20 hover:-translate-y-0.5',
+        selected && 'ring-2 ring-primary shadow-[0_0_20px_rgba(var(--primary),0.2)] border-primary/30'
       )}
       onClick={onSelect}
     >

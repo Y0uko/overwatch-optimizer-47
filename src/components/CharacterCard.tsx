@@ -14,14 +14,14 @@ export function CharacterCard({ character, selected, onSelect }: CharacterCardPr
   return (
     <Card 
       className={cn(
-        'transition-all cursor-pointer hover:shadow-md',
-        selected && 'ring-2 ring-primary shadow-lg'
+        'transition-all duration-200 cursor-pointer hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:border-white/20 hover:-translate-y-0.5',
+        selected && 'ring-2 ring-primary shadow-[0_0_20px_rgba(var(--primary),0.2)] border-primary/30'
       )}
       onClick={onSelect}
     >
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
+          <div className="h-12 w-12 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0">
             {character.image_url ? (
               <img 
                 src={character.image_url} 

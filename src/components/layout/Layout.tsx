@@ -12,7 +12,7 @@ export function Layout({ children }: LayoutProps) {
       <main className="flex-1">
         {children}
       </main>
-      <footer className="py-6 border-t border-border">
+      <footer className="py-6 border-t border-white/[0.06] bg-card/30 backdrop-blur-xl">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           Stadium Optimizer — Optimize your Overwatch Stadium builds
         </div>

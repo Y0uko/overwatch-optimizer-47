@@ -595,7 +595,7 @@ export default function Optimizer() {
                         <button
                           key={char.id}
                           onClick={() => setSelectedCharacter(char)}
-                          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-all hover:scale-105 border-border hover:border-role-tank/50 bg-muted/50"
+                          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border transition-all duration-200 hover:scale-105 border-white/10 hover:border-role-tank/40 bg-white/[0.04] hover:bg-role-tank/10 hover:shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
                         >
                           {char.image_url && (
                             <img 
@@ -618,7 +618,7 @@ export default function Optimizer() {
                         <button
                           key={char.id}
                           onClick={() => setSelectedCharacter(char)}
-                          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-all hover:scale-105 border-border hover:border-role-damage/50 bg-muted/50"
+                          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border transition-all duration-200 hover:scale-105 border-white/10 hover:border-role-damage/40 bg-white/[0.04] hover:bg-role-damage/10 hover:shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
                         >
                           {char.image_url && (
                             <img 
@@ -641,7 +641,7 @@ export default function Optimizer() {
                         <button
                           key={char.id}
                           onClick={() => setSelectedCharacter(char)}
-                          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-all hover:scale-105 border-border hover:border-role-support/50 bg-muted/50"
+                          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border transition-all duration-200 hover:scale-105 border-white/10 hover:border-role-support/40 bg-white/[0.04] hover:bg-role-support/10 hover:shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
                         >
                           {char.image_url && (
                             <img 
@@ -711,10 +711,10 @@ export default function Optimizer() {
                           <button
                             key={r}
                             onClick={() => setRound(r)}
-                            className={`flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg font-bold text-xs sm:text-sm transition-all ${
+                            className={`flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 ${
                               round === r
-                                ? 'bg-primary text-primary-foreground ring-2 ring-primary'
-                                : 'bg-muted hover:bg-muted/80 text-foreground'
+                                ? 'bg-primary text-primary-foreground ring-2 ring-primary shadow-[0_0_12px_rgba(var(--primary),0.3)]'
+                                : 'bg-white/[0.04] hover:bg-white/[0.08] text-foreground border border-white/10'
                             }`}
                           >
                             {r}
@@ -752,10 +752,10 @@ export default function Optimizer() {
                         <div className="flex gap-1">
                           <button
                             onClick={() => setStatPriority('ability')}
-                            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
+                            className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1 ${
                               statPriority === 'ability'
-                                ? 'bg-rarity-epic text-white ring-2 ring-rarity-epic'
-                                : 'bg-muted hover:bg-muted/80 text-foreground'
+                                ? 'bg-rarity-epic text-white ring-2 ring-rarity-epic shadow-[0_0_12px_rgba(var(--rarity-epic),0.3)]'
+                                : 'bg-white/[0.04] hover:bg-white/[0.08] text-foreground border border-white/10'
                             }`}
                           >
                             <Sparkles className="h-3 w-3" />
@@ -763,10 +763,10 @@ export default function Optimizer() {
                           </button>
                           <button
                             onClick={() => setStatPriority('damage')}
-                            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
+                            className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1 ${
                               statPriority === 'damage'
-                                ? 'bg-role-damage text-white ring-2 ring-role-damage'
-                                : 'bg-muted hover:bg-muted/80 text-foreground'
+                                ? 'bg-role-damage text-white ring-2 ring-role-damage shadow-[0_0_12px_rgba(var(--role-damage),0.3)]'
+                                : 'bg-white/[0.04] hover:bg-white/[0.08] text-foreground border border-white/10'
                             }`}
                           >
                             <Sword className="h-3 w-3" />
@@ -774,10 +774,10 @@ export default function Optimizer() {
                           </button>
                           <button
                             onClick={() => setStatPriority('survival')}
-                            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
+                            className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1 ${
                               statPriority === 'survival'
-                                ? 'bg-role-tank text-white ring-2 ring-role-tank'
-                                : 'bg-muted hover:bg-muted/80 text-foreground'
+                                ? 'bg-role-tank text-white ring-2 ring-role-tank shadow-[0_0_12px_rgba(var(--role-tank),0.3)]'
+                                : 'bg-white/[0.04] hover:bg-white/[0.08] text-foreground border border-white/10'
                             }`}
                           >
                             <Shield className="h-3 w-3" />
@@ -787,7 +787,7 @@ export default function Optimizer() {
                       </div>
                       
                       {/* Budget Status */}
-                      <div className="mt-2 sm:mt-3 p-2 sm:p-3 rounded-lg bg-muted/50 border">
+                      <div className="mt-2 sm:mt-3 p-2 sm:p-3 rounded-xl bg-white/[0.03] border border-white/[0.08]">
                         <div className="flex justify-between text-xs sm:text-sm mb-1.5 sm:mb-2">
                           <span className="text-muted-foreground">{t('optimizer.spent')}</span>
                           <span className="font-mono font-medium">{totalCost.toLocaleString()}</span>
@@ -827,7 +827,7 @@ export default function Optimizer() {
                           {optimalBuild.map(item => (
                             <div 
                               key={item.id}
-                              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-muted border border-border"
+                              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl overflow-hidden bg-white/[0.04] border border-white/10"
                               title={item.name}
                             >
                               {item.image_url ? (
