@@ -117,6 +117,42 @@ export type Database = {
         }
         Relationships: []
       }
+      item_character_restrictions: {
+        Row: {
+          character_id: string
+          created_at: string
+          id: string
+          item_id: string
+        }
+        Insert: {
+          character_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+        }
+        Update: {
+          character_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_character_restrictions_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_character_restrictions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       items: {
         Row: {
           ability_lifesteal: number | null

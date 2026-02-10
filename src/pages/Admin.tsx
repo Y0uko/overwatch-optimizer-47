@@ -8,6 +8,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { Item, ItemCategory, ItemRarity } from '@/types/database';
 import { Settings, Search, Save, Loader2, Package, AlertCircle, ChevronDown, ChevronUp, ShieldX } from 'lucide-react';
+import { Character } from '@/types/database';
+import { HeroRestrictionEditor } from '@/components/admin/HeroRestrictionEditor';
 import { useToast } from '@/hooks/use-toast';
 import { PerkBadge, PerkType } from '@/components/ui/PerkBadge';
 import { AddItemDialog } from '@/components/admin/AddItemDialog';
@@ -38,6 +40,7 @@ const statFields: { key: keyof Item; label: string; perkType?: PerkType }[] = [
 
 export default function Admin() {
   const [items, setItems] = useState<Item[]>([]);
+  const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
@@ -87,15 +90,18 @@ export default function Admin() {
   }, []);
 
   const fetchItems = async () => {
-    const { data, error } = await supabase
-      .from('items')
-      .select('*')
-      .order('name');
+    const [itemsRes, charsRes] = await Promise.all([
+      supabase.from('items').select('*').order('name'),
+      supabase.from('characters').select('*').order('name'),
+    ]);
     
-    if (error) {
-      toast({ title: 'Error loading items', description: error.message, variant: 'destructive' });
+    if (itemsRes.error) {
+      toast({ title: 'Error loading items', description: itemsRes.error.message, variant: 'destructive' });
     } else {
-      setItems((data as Item[]) || []);
+      setItems((itemsRes.data as Item[]) || []);
+    }
+    if (charsRes.data) {
+      setCharacters(charsRes.data as Character[]);
     }
     setLoading(false);
   };
@@ -504,6 +510,9 @@ export default function Admin() {
                               className="h-8 text-sm"
                             />
                           </div>
+
+                          {/* Hero Restriction */}
+                          <HeroRestrictionEditor itemId={item.id} characters={characters} />
                         </div>
                       )}
                     </div>
