@@ -6,35 +6,35 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 220 20% 10%;
+    --background: 225 40% 12%;
+    --foreground: 220 20% 92%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card: 225 35% 16%;
+    --card-foreground: 220 20% 92%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover: 225 35% 18%;
+    --popover-foreground: 220 20% 92%;
 
     --primary: 25 95% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 20% 10%;
+    --secondary: 225 30% 22%;
+    --secondary-foreground: 220 20% 92%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 225 30% 20%;
+    --muted-foreground: 220 15% 55%;
 
-    --accent: 200 98% 39%;
+    --accent: 200 98% 45%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
+    --border: 225 25% 24%;
+    --input: 225 25% 24%;
     --ring: 25 95% 53%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     /* Custom tokens */
     --success: 142 76% 36%;
@@ -44,61 +44,61 @@
 
     /* Rarity colors */
     --rarity-common: 220 10% 50%;
-    --rarity-rare: 200 98% 39%;
+    --rarity-rare: 200 98% 45%;
     --rarity-epic: 270 70% 55%;
     --rarity-legendary: 25 95% 53%;
 
     /* Role colors */
-    --role-tank: 200 98% 39%;
-    --role-damage: 0 84% 60%;
+    --role-tank: 200 98% 45%;
+    --role-damage: 0 72% 51%;
     --role-support: 142 76% 36%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 220 10% 30%;
+    --sidebar-background: 225 40% 10%;
+    --sidebar-foreground: 220 15% 80%;
     --sidebar-primary: 25 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 220 20% 10%;
-    --sidebar-border: 220 13% 91%;
+    --sidebar-accent: 225 30% 20%;
+    --sidebar-accent-foreground: 220 20% 92%;
+    --sidebar-border: 225 25% 22%;
     --sidebar-ring: 25 95% 53%;
   }
 
   .dark {
-    --background: 220 20% 8%;
-    --foreground: 220 14% 96%;
+    --background: 225 40% 8%;
+    --foreground: 220 20% 92%;
 
-    --card: 220 20% 12%;
-    --card-foreground: 220 14% 96%;
+    --card: 225 35% 13%;
+    --card-foreground: 220 20% 92%;
 
-    --popover: 220 20% 12%;
-    --popover-foreground: 220 14% 96%;
+    --popover: 225 35% 15%;
+    --popover-foreground: 220 20% 92%;
 
     --primary: 25 95% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 20% 18%;
-    --secondary-foreground: 220 14% 96%;
+    --secondary: 225 30% 18%;
+    --secondary-foreground: 220 20% 92%;
 
-    --muted: 220 20% 18%;
-    --muted-foreground: 220 10% 60%;
+    --muted: 225 30% 16%;
+    --muted-foreground: 220 15% 55%;
 
-    --accent: 200 98% 39%;
+    --accent: 200 98% 45%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 20% 20%;
-    --input: 220 20% 20%;
+    --border: 225 25% 20%;
+    --input: 225 25% 20%;
     --ring: 25 95% 53%;
 
-    --sidebar-background: 220 20% 10%;
-    --sidebar-foreground: 220 14% 96%;
+    --sidebar-background: 225 40% 7%;
+    --sidebar-foreground: 220 15% 80%;
     --sidebar-primary: 25 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 18%;
-    --sidebar-accent-foreground: 220 14% 96%;
-    --sidebar-border: 220 20% 20%;
+    --sidebar-accent: 225 30% 16%;
+    --sidebar-accent-foreground: 220 20% 92%;
+    --sidebar-border: 225 25% 18%;
     --sidebar-ring: 25 95% 53%;
   }
 }
@@ -115,6 +115,6 @@
 
 @layer utilities {
   .glass {
-    @apply bg-card/80 backdrop-blur-lg border border-border/50;
+    @apply bg-card/60 backdrop-blur-xl border border-white/10 shadow-lg;
   }
 }
