@@ -5,6 +5,7 @@ import { RarityBadge } from '@/components/ui/RarityBadge';
 import { PerkBadge, getItemPerks } from '@/components/ui/PerkBadge';
 import { Coins, Sword, Heart, Sparkles, Shield, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface ItemCardProps {
   item: Item;
@@ -34,6 +35,12 @@ export function ItemCard({ item, selected, onSelect, showStats = true, compact =
   const perks = getItemPerks(item);
 
   return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      whileHover={{ scale: 1.02 }}
+    >
     <Card 
       className={cn(
         'transition-all duration-200 cursor-pointer hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:border-white/20 hover:-translate-y-0.5',
@@ -113,5 +120,6 @@ export function ItemCard({ item, selected, onSelect, showStats = true, compact =
         )}
       </CardContent>
     </Card>
+    </motion.div>
   );
 }

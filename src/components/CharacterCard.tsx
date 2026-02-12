@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { RoleBadge } from '@/components/ui/RoleBadge';
 import { Heart, Sword, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface CharacterCardProps {
   character: Character;
@@ -12,6 +13,12 @@ interface CharacterCardProps {
 
 export function CharacterCard({ character, selected, onSelect }: CharacterCardProps) {
   return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      whileHover={{ scale: 1.02 }}
+    >
     <Card 
       className={cn(
         'transition-all duration-200 cursor-pointer hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:border-white/20 hover:-translate-y-0.5',
@@ -59,5 +66,6 @@ export function CharacterCard({ character, selected, onSelect }: CharacterCardPr
         )}
       </CardContent>
     </Card>
+    </motion.div>
   );
 }

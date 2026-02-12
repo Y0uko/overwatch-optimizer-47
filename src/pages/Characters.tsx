@@ -9,6 +9,7 @@ import { Character, CharacterRole } from '@/types/database';
 import { Users, Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 export default function Characters() {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -49,7 +50,7 @@ export default function Characters() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
+        <motion.div className="mb-8" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
             <Users className="h-8 w-8 text-primary" />
             Characters
@@ -57,7 +58,7 @@ export default function Characters() {
           <p className="text-muted-foreground">
             Browse all Overwatch Stadium characters and their stats.
           </p>
-        </div>
+        </motion.div>
 
         <Card className="mb-6">
           <CardContent className="pt-6">
