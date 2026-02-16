@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Zap, Calculator, Bookmark, ArrowRight } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { motion, type Variants } from 'framer-motion';
+import { AnimatedGrid } from '@/components/AnimatedGrid';
 
 const staggerContainer: Variants = {
   hidden: {},
@@ -30,6 +31,7 @@ export default function Index() {
     <Layout>
       {/* Hero Section */}
       <section className="py-16 sm:py-24 lg:py-36 relative overflow-hidden">
+        <AnimatedGrid />
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-primary/[0.07] rounded-full blur-[120px]" />
           <div className="absolute top-1/3 left-1/4 w-[300px] h-[300px] bg-accent/[0.05] rounded-full blur-[100px]" />
