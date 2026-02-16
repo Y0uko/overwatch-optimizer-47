@@ -41,9 +41,11 @@ const statFields: { key: keyof Item; label: string; perkType?: PerkType }[] = [
 export default function Admin() {
   const [items, setItems] = useState<Item[]>([]);
   const [characters, setCharacters] = useState<Character[]>([]);
+  const [restrictions, setRestrictions] = useState<{ item_id: string; character_id: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
+  const [heroFilter, setHeroFilter] = useState<string>('all');
   const [pendingChanges, setPendingChanges] = useState<PendingChanges>({});
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -90,9 +92,10 @@ export default function Admin() {
   }, []);
 
   const fetchItems = async () => {
-    const [itemsRes, charsRes] = await Promise.all([
+    const [itemsRes, charsRes, restrictionsRes] = await Promise.all([
       supabase.from('items').select('*').order('name'),
       supabase.from('characters').select('*').order('name'),
+      supabase.from('item_character_restrictions').select('item_id, character_id'),
     ]);
     
     if (itemsRes.error) {
@@ -102,6 +105,9 @@ export default function Admin() {
     }
     if (charsRes.data) {
       setCharacters(charsRes.data as Character[]);
+    }
+    if (restrictionsRes.data) {
+      setRestrictions(restrictionsRes.data);
     }
     setLoading(false);
   };
@@ -194,10 +200,22 @@ export default function Admin() {
     toast({ title: 'Changes discarded' });
   };
 
-  const filteredItems = items.filter(item => 
-    item.name.toLowerCase().includes(search.toLowerCase()) ||
-    item.special_effect?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredItems = items.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase()) ||
+      item.special_effect?.toLowerCase().includes(search.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    if (heroFilter === 'all') return true;
+    if (heroFilter === 'general') {
+      // Items with no restrictions (available to all heroes)
+      return !restrictions.some(r => r.item_id === item.id);
+    }
+    // Items restricted to this specific hero, OR general items
+    const itemRestrictions = restrictions.filter(r => r.item_id === item.id);
+    if (itemRestrictions.length === 0) return true; // general item
+    return itemRestrictions.some(r => r.character_id === heroFilter);
+  });
 
   const categories: ItemCategory[] = ['weapon', 'ability', 'survival', 'gadget'];
   const rarities: ItemRarity[] = ['common', 'rare', 'epic', 'legendary'];
@@ -292,15 +310,31 @@ export default function Admin() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search items..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
+            {/* Search & Hero Filter */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search items..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={heroFilter} onValueChange={setHeroFilter}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Filter by hero" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Heroes</SelectItem>
+                  <SelectItem value="general">General Only</SelectItem>
+                  {characters.map(char => (
+                    <SelectItem key={char.id} value={char.id}>
+                      {char.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Perk Legend */}
