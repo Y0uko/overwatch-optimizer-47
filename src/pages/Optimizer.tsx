@@ -30,6 +30,7 @@ type StatPriority = 'ability' | 'damage' | 'survival';
 export default function Optimizer() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [items, setItems] = useState<Item[]>([]);
+  const [restrictions, setRestrictions] = useState<{ item_id: string; character_id: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [budget, setBudget] = useState<number | ''>(3500);
@@ -50,12 +51,14 @@ export default function Optimizer() {
 
   useEffect(() => {
     async function fetchData() {
-      const [{ data: chars }, { data: itms }] = await Promise.all([
+      const [{ data: chars }, { data: itms }, { data: restr }] = await Promise.all([
         supabase.from('characters').select('*').order('name'),
         supabase.from('items').select('*').order('cost'),
+        supabase.from('item_character_restrictions').select('item_id, character_id'),
       ]);
       setCharacters((chars as Character[]) || []);
       setItems((itms as Item[]) || []);
+      setRestrictions(restr || []);
       setLoading(false);
     }
     fetchData();
@@ -444,16 +447,28 @@ export default function Optimizer() {
       .sort((a, b) => getItemStatValue(b, priority) - getItemStatValue(a, priority));
   };
 
+  // Filter items to only those available for the selected hero
+  const heroFilteredItems = useMemo(() => {
+    if (!selectedCharacter) return items;
+    return items.filter(item => {
+      const itemRestrictions = restrictions.filter(r => r.item_id === item.id);
+      // No restrictions = general item, available to all
+      if (itemRestrictions.length === 0) return true;
+      // Has restrictions = only available if hero is in the list
+      return itemRestrictions.some(r => r.character_id === selectedCharacter.id);
+    });
+  }, [items, restrictions, selectedCharacter]);
+
   // Get optimal build using 3D Dynamic Programming
   const optimalBuild = useMemo(() => {
     if (!selectedCharacter) return [];
     
-    const availableItems = items.filter(
+    const availableItems = heroFilteredItems.filter(
       item => selectedCategory === 'all' || item.category === selectedCategory
     );
     
     return solve3DDP(availableItems, effectiveBudget, 6, statPriority);
-  }, [items, selectedCharacter, effectiveBudget, selectedCategory, statPriority]);
+  }, [heroFilteredItems, selectedCharacter, effectiveBudget, selectedCategory, statPriority]);
 
   const recommendedItems = useMemo(() => {
     if (!selectedCharacter) return [];
@@ -467,7 +482,7 @@ export default function Optimizer() {
     };
     
     // Score items by profitability and synergy with current build
-    const scoredItems = items.map(item => {
+    const scoredItems = heroFilteredItems.map(item => {
       const value = getItemValue(item, selectedCharacter);
       const profitability = item.cost > 0 ? (value / item.cost) * 1000 : 0;
       const synergyBonus = calculateSynergyBonus(item, currentStats);
@@ -487,7 +502,7 @@ export default function Optimizer() {
       .filter(item => selectedCategory === 'all' || item.category === selectedCategory)
       .sort((a, b) => b.score - a.score)
       .slice(0, 12);
-  }, [items, selectedCharacter, remainingBudget, selectedCategory, selectedItems]);
+  }, [heroFilteredItems, selectedCharacter, remainingBudget, selectedCategory, selectedItems]);
 
   const { t } = useTranslation();
 
