@@ -13,7 +13,7 @@ import { RoundHistory } from '@/components/RoundHistory';
 import { useRoundHistory, RoundEntry } from '@/hooks/useRoundHistory';
 import { supabase } from '@/integrations/supabase/client';
 import { Character, Item, ItemCategory } from '@/types/database';
-import { Calculator, Coins, Zap, Loader2, Sword, Sparkles, Shield, Wrench, Package, Trash2, Plus, RotateCcw } from 'lucide-react';
+import { Calculator, Coins, Zap, Loader2, Sword, Sparkles, Shield, Wrench, Package, Trash2, Plus, RotateCcw, Heart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/contexts/TranslationContext';
 
@@ -895,7 +895,7 @@ export default function Optimizer() {
                       </div>
                     </div>
 
-                    {/* Apply Optimal Build Button with Item Icons */}
+                    {/* Apply Optimal Build Button with Item Icons & Stats Impact */}
                     {optimalBuild.length > 0 && (
                       <div className="space-y-2">
                         <Button 
@@ -925,6 +925,89 @@ export default function Optimizer() {
                             </div>
                           ))}
                         </div>
+
+                        {/* Optimal Build Stats Impact */}
+                        {selectedCharacter && (() => {
+                          const totalDmg = optimalBuild.reduce((s, i) => s + (i.damage_bonus || 0), 0);
+                          const totalHP = optimalBuild.reduce((s, i) => s + (i.health_bonus || 0), 0);
+                          const totalAP = optimalBuild.reduce((s, i) => s + (i.ability_power || 0), 0);
+                          const totalShield = optimalBuild.reduce((s, i) => s + (i.shield_bonus || 0), 0);
+                          const totalArmor = optimalBuild.reduce((s, i) => s + (i.armor_bonus || 0), 0);
+                          const totalCDR = Math.min(20, optimalBuild.reduce((s, i) => s + (i.cooldown_reduction || 0), 0));
+                          const totalAS = Math.min(20, optimalBuild.reduce((s, i) => s + (i.attack_speed || 0), 0));
+                          const totalAmmo = Math.min(40, optimalBuild.reduce((s, i) => s + (i.max_ammo || 0), 0));
+                          const totalWL = optimalBuild.reduce((s, i) => s + (i.weapon_lifesteal || 0), 0);
+                          const totalAL = optimalBuild.reduce((s, i) => s + (i.ability_lifesteal || 0), 0);
+
+                          const effDmg = Math.round(selectedCharacter.base_damage * (1 + totalDmg / 100));
+                          const effHP = selectedCharacter.health + totalHP;
+
+                          return (
+                            <div className="p-2.5 sm:p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-2">
+                              <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider font-semibold text-center">
+                                Impact sur {selectedCharacter.name}
+                              </div>
+                              {/* Primary stats */}
+                              <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                                <div className="flex items-center justify-between bg-muted/50 px-2 py-1.5 rounded-lg">
+                                  <span className="text-[10px] sm:text-xs flex items-center gap-1"><Sword className="h-3 w-3 text-role-damage" />DMG</span>
+                                  <span className="font-mono text-[10px] sm:text-xs font-bold">
+                                    {selectedCharacter.base_damage} → <span className="text-role-damage">{effDmg}</span>
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between bg-muted/50 px-2 py-1.5 rounded-lg">
+                                  <span className="text-[10px] sm:text-xs flex items-center gap-1"><Heart className="h-3 w-3 text-role-support" />HP</span>
+                                  <span className="font-mono text-[10px] sm:text-xs font-bold">
+                                    {selectedCharacter.health} → <span className="text-role-support">{effHP}</span>
+                                  </span>
+                                </div>
+                              </div>
+                              {/* Secondary stats - only show if > 0 */}
+                              <div className="flex flex-wrap gap-1 justify-center">
+                                {totalAP > 0 && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-rarity-epic/20 text-rarity-epic border border-rarity-epic/30">
+                                    <Sparkles className="h-2.5 w-2.5" />+{totalAP}% AP
+                                  </span>
+                                )}
+                                {totalShield > 0 && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                                    <Shield className="h-2.5 w-2.5" />+{totalShield}% Shield
+                                  </span>
+                                )}
+                                {totalArmor > 0 && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                                    +{totalArmor}% Armor
+                                  </span>
+                                )}
+                                {totalCDR > 0 && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-green-500/20 text-green-400 border border-green-500/30">
+                                    -{totalCDR}% CDR
+                                  </span>
+                                )}
+                                {totalAS > 0 && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                                    <Zap className="h-2.5 w-2.5" />+{totalAS}% AS
+                                  </span>
+                                )}
+                                {totalAmmo > 0 && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                                    +{totalAmmo}% Ammo
+                                  </span>
+                                )}
+                                {totalWL > 0 && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-red-500/20 text-red-400 border border-red-500/30">
+                                    +{totalWL}% W.LS
+                                  </span>
+                                )}
+                                {totalAL > 0 && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                                    +{totalAL}% A.LS
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </CardContent>
