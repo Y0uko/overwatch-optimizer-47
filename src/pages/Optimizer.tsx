@@ -294,17 +294,49 @@ export default function Optimizer() {
     switch (priority) {
       case 'ability':
         return (item.ability_power || 0) + 
-               (item.cooldown_reduction || 0) * 0.5 + 
+               (item.cooldown_reduction || 0) * 0.8 + 
                (item.ability_lifesteal || 0) * 0.3;
       case 'damage':
         return (item.damage_bonus || 0) + 
-               (item.attack_speed || 0) * 0.4 + 
-               (item.weapon_lifesteal || 0) * 0.3;
+               (item.attack_speed || 0) * 0.7 + 
+               (item.weapon_lifesteal || 0) * 0.3 +
+               (item.max_ammo || 0) * 0.5;
       case 'survival':
         return (item.health_bonus || 0) * 0.1 + 
                (item.shield_bonus || 0) * 0.15 + 
                (item.armor_bonus || 0) * 0.2;
     }
+  };
+
+  // Check if adding an item would exceed stat caps for the given priority
+  const getCapPenalty = (item: Item, currentItems: Item[], priority: StatPriority): number => {
+    if (priority === 'ability') {
+      const currentCDR = currentItems.reduce((sum, i) => sum + (i.cooldown_reduction || 0), 0);
+      const itemCDR = item.cooldown_reduction || 0;
+      if (itemCDR > 0 && currentCDR >= 20) return -100; // Already at cap, penalize heavily
+      const overflow = Math.max(0, currentCDR + itemCDR - 20);
+      return -overflow * 2; // Penalize wasted CDR
+    }
+    if (priority === 'damage') {
+      const currentAS = currentItems.reduce((sum, i) => sum + (i.attack_speed || 0), 0);
+      const currentAmmo = currentItems.reduce((sum, i) => sum + (i.max_ammo || 0), 0);
+      const itemAS = item.attack_speed || 0;
+      const itemAmmo = item.max_ammo || 0;
+      let penalty = 0;
+      if (itemAS > 0 && currentAS >= 20) penalty -= 100;
+      else penalty -= Math.max(0, currentAS + itemAS - 20) * 2;
+      if (itemAmmo > 0 && currentAmmo >= 40) penalty -= 100;
+      else penalty -= Math.max(0, currentAmmo + itemAmmo - 40) * 2;
+      return penalty;
+    }
+    return 0;
+  };
+
+  // Compute effective stat value respecting caps
+  const getItemStatValueCapped = (item: Item, selectedSoFar: Item[], priority: StatPriority): number => {
+    const base = getItemStatValue(item, priority);
+    const penalty = getCapPenalty(item, selectedSoFar, priority);
+    return Math.max(0, base + penalty);
   };
   
   const solve3DDP = (
@@ -405,18 +437,19 @@ export default function Optimizer() {
     }
     
     // Refinement pass: try to fit additional items in remaining budget
-    // Prioritize items with the target stat
+    // Prioritize items with the target stat, respecting caps
     if (bestItems.length < maxItems) {
       const selectedSet = new Set(bestItems);
       const currentCost = bestItems.reduce((sum, idx) => sum + costs[idx], 0);
       const remainingBudget = capacity - currentCost;
       const remainingSlots = maxItems - bestItems.length;
+      const currentSelectedItems = bestItems.map(idx => items[idx]);
       
-      // Find items that fit in remaining budget, sorted by stat value (prioritize target stat)
+      // Find items that fit in remaining budget, scored with cap awareness
       const candidates = items
         .map((item, idx) => ({ 
           idx, 
-          statValue: statValues[idx], 
+          statValue: getItemStatValueCapped(item, currentSelectedItems, priority), 
           cost: costs[idx],
           hasTargetStat: getItemStatValue(item, priority) > 0
         }))
