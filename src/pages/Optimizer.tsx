@@ -511,19 +511,28 @@ export default function Optimizer() {
     const hasSurvivalItem = result.some(i => i.category === 'survival');
     
     if (cantAffordEpic && !hasSurvivalItem) {
-      // Find the best survival item that fits in budget
+      const currentCost = result.reduce((sum, i) => sum + i.cost, 0);
+      const budgetLeft = effectiveBudget - currentCost;
+
+      // Find the best survival item that fits in remaining budget
       const survivalCandidates = availableItems
-        .filter(i => i.category === 'survival' && i.cost <= effectiveBudget)
+        .filter(i => i.category === 'survival' && i.cost <= budgetLeft && !result.some(r => r.id === i.id))
         .sort((a, b) => getItemStatValue(b, 'survival') - getItemStatValue(a, 'survival'));
       
       if (survivalCandidates.length > 0) {
-        // Replace the weakest non-survival item, or add if there's room
-        if (result.length >= 6) {
-          // Replace last item (weakest by current priority)
-          const weakestIdx = result.length - 1;
-          result = [...result.slice(0, weakestIdx), survivalCandidates[0]];
-        } else {
+        if (result.length < 6) {
+          // Room available, just add it
           result = [...result, survivalCandidates[0]];
+        } else {
+          // Replace the weakest item only if the swap keeps us within budget
+          const weakest = result[result.length - 1];
+          const newBudgetLeft = budgetLeft + weakest.cost;
+          const candidate = availableItems
+            .filter(i => i.category === 'survival' && i.cost <= newBudgetLeft && !result.slice(0, -1).some(r => r.id === i.id))
+            .sort((a, b) => getItemStatValue(b, 'survival') - getItemStatValue(a, 'survival'))[0];
+          if (candidate) {
+            result = [...result.slice(0, -1), candidate];
+          }
         }
       }
     }
