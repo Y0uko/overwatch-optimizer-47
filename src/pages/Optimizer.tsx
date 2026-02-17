@@ -500,7 +500,35 @@ export default function Optimizer() {
       item => selectedCategory === 'all' || item.category === selectedCategory
     );
     
-    return solve3DDP(availableItems, effectiveBudget, 6, statPriority);
+    let result = solve3DDP(availableItems, effectiveBudget, 6, statPriority);
+
+    // If user can't afford any epic item, ensure at least one survival item is included
+    const cheapestEpic = heroFilteredItems
+      .filter(i => i.rarity === 'epic' || i.rarity === 'legendary')
+      .sort((a, b) => a.cost - b.cost)[0];
+    
+    const cantAffordEpic = !cheapestEpic || effectiveBudget < cheapestEpic.cost;
+    const hasSurvivalItem = result.some(i => i.category === 'survival');
+    
+    if (cantAffordEpic && !hasSurvivalItem) {
+      // Find the best survival item that fits in budget
+      const survivalCandidates = availableItems
+        .filter(i => i.category === 'survival' && i.cost <= effectiveBudget)
+        .sort((a, b) => getItemStatValue(b, 'survival') - getItemStatValue(a, 'survival'));
+      
+      if (survivalCandidates.length > 0) {
+        // Replace the weakest non-survival item, or add if there's room
+        if (result.length >= 6) {
+          // Replace last item (weakest by current priority)
+          const weakestIdx = result.length - 1;
+          result = [...result.slice(0, weakestIdx), survivalCandidates[0]];
+        } else {
+          result = [...result, survivalCandidates[0]];
+        }
+      }
+    }
+
+    return result;
   }, [heroFilteredItems, selectedCharacter, effectiveBudget, selectedCategory, statPriority]);
 
   const recommendedItems = useMemo(() => {
