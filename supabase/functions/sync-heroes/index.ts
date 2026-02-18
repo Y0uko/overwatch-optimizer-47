@@ -15,19 +15,6 @@ interface OverfastHeroListItem {
   gamemodes: string[];
 }
 
-interface OverfastHeroDetail {
-  name: string;
-  description: string;
-  portrait: string;
-  role: 'tank' | 'damage' | 'support';
-  hitpoints: {
-    health: number;
-    armor: number;
-    shields: number;
-    total: number;
-  };
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -38,11 +25,10 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 1. Fetch hero list — only stadium heroes
+    // Fetch hero list (single request, no rate limit issues)
     const listRes = await fetch(`${OVERFAST_API}/heroes?locale=en-us`);
     if (!listRes.ok) {
-      const text = await listRes.text();
-      console.error('Failed to fetch hero list:', listRes.status, text);
+      await listRes.text();
       return new Response(JSON.stringify({ error: 'Failed to fetch hero list' }), {
         status: 502,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -52,96 +38,73 @@ Deno.serve(async (req) => {
     const allHeroes: OverfastHeroListItem[] = await listRes.json();
     const stadiumHeroes = allHeroes.filter(h => h.gamemodes.includes('stadium'));
 
-    console.log(`Found ${stadiumHeroes.length} stadium heroes out of ${allHeroes.length} total`);
+    console.log(`Found ${stadiumHeroes.length} stadium heroes`);
 
-    // 2. Fetch details for each hero (with rate-limit-friendly delay)
+    // Get all existing characters
+    const { data: existingChars } = await supabase
+      .from('characters')
+      .select('id, name, role, image_url');
+
+    const existingMap = new Map((existingChars || []).map(c => [c.name, c]));
+
     const results: { name: string; status: string }[] = [];
 
     for (const hero of stadiumHeroes) {
-      try {
-        // Fetch with retry on 429
-        let detailRes: Response | null = null;
-        for (let attempt = 0; attempt < 3; attempt++) {
-          detailRes = await fetch(`${OVERFAST_API}/heroes/${hero.key}`);
-          if (detailRes.status === 429) {
-            await detailRes.text();
-            const wait = (attempt + 1) * 5000; // 5s, 10s, 15s
-            console.log(`Rate limited on ${hero.key}, waiting ${wait}ms (attempt ${attempt + 1})`);
-            await new Promise(r => setTimeout(r, wait));
-            continue;
-          }
-          break;
-        }
+      const existing = existingMap.get(hero.name);
 
-        if (!detailRes || !detailRes.ok) {
-          if (detailRes) await detailRes.text();
-          results.push({ name: hero.name, status: `detail fetch failed: ${detailRes?.status || 'no response'}` });
-          continue;
-        }
-
-        const detail: OverfastHeroDetail = await detailRes.json();
-
-        // Map role
-        const roleMap: Record<string, string> = {
-          tank: 'tank',
-          damage: 'damage',
-          support: 'support',
-        };
-
-        const characterData = {
-          name: detail.name,
-          role: roleMap[detail.role] || 'damage',
-          health: detail.hitpoints.total,
-          base_damage: 10, // API doesn't provide base weapon damage, keep existing or default
-          image_url: detail.portrait,
-          description: null as string | null,
-        };
-
-        // Check if hero already exists
-        const { data: existing } = await supabase
-          .from('characters')
-          .select('id, base_damage')
-          .eq('name', detail.name)
-          .maybeSingle();
-
-        if (existing) {
-          // Update but preserve base_damage (manually set)
+      if (existing) {
+        // Update role and image from list data (no detail call needed)
+        const needsUpdate = existing.role !== hero.role || existing.image_url !== hero.portrait;
+        if (needsUpdate) {
           const { error } = await supabase
             .from('characters')
-            .update({
-              role: characterData.role,
-              health: characterData.health,
-              image_url: characterData.image_url,
-            })
+            .update({ role: hero.role, image_url: hero.portrait })
             .eq('id', existing.id);
-
-          results.push({ name: detail.name, status: error ? `update error: ${error.message}` : 'updated' });
+          results.push({ name: hero.name, status: error ? `update error: ${error.message}` : 'updated' });
         } else {
-          // Insert new hero
-          const { error } = await supabase
-            .from('characters')
-            .insert(characterData);
-
-          results.push({ name: detail.name, status: error ? `insert error: ${error.message}` : 'inserted' });
+          results.push({ name: hero.name, status: 'unchanged' });
+        }
+      } else {
+        // New hero — try to get hitpoints from detail endpoint
+        let health = 250; // default
+        try {
+          const detailRes = await fetch(`${OVERFAST_API}/heroes/${hero.key}`);
+          if (detailRes.ok) {
+            const detail = await detailRes.json();
+            health = detail.hitpoints?.total || 250;
+          } else {
+            await detailRes.text();
+            console.log(`Could not fetch detail for ${hero.key}, using default health`);
+          }
+          // Delay for rate limit
+          await new Promise(r => setTimeout(r, 1500));
+        } catch {
+          console.log(`Detail fetch error for ${hero.key}, using default health`);
         }
 
-        // Delay to respect OverFast shared rate limits
-        await new Promise(r => setTimeout(r, 2000));
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Unknown error';
-        results.push({ name: hero.name, status: `error: ${msg}` });
+        const { error } = await supabase
+          .from('characters')
+          .insert({
+            name: hero.name,
+            role: hero.role,
+            health,
+            base_damage: 10,
+            image_url: hero.portrait,
+          });
+        results.push({ name: hero.name, status: error ? `insert error: ${error.message}` : 'inserted' });
       }
     }
 
     const inserted = results.filter(r => r.status === 'inserted').length;
     const updated = results.filter(r => r.status === 'updated').length;
-    const errors = results.filter(r => r.status !== 'inserted' && r.status !== 'updated').length;
+    const unchanged = results.filter(r => r.status === 'unchanged').length;
+    const errors = results.filter(r => !['inserted', 'updated', 'unchanged'].includes(r.status)).length;
 
-    console.log(`Sync complete: ${inserted} inserted, ${updated} updated, ${errors} errors`);
+    console.log(`Sync done: ${inserted} new, ${updated} updated, ${unchanged} unchanged, ${errors} errors`);
 
     return new Response(JSON.stringify({
       success: true,
-      summary: { total: stadiumHeroes.length, inserted, updated, errors },
+      summary: { total: stadiumHeroes.length, inserted, updated, unchanged, errors },
       details: results,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
