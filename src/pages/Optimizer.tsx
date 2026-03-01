@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { cn } from '@/lib/utils';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -901,7 +902,13 @@ export default function Optimizer() {
                           {optimalBuild.map(item => (
                             <div 
                               key={item.id}
-                              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl overflow-hidden bg-white/[0.04] border border-white/10"
+                              className={cn(
+                                "w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-white/[0.04] ring-2",
+                                item.rarity === 'common' ? 'ring-rarity-common' :
+                                item.rarity === 'rare' ? 'ring-rarity-rare' :
+                                item.rarity === 'epic' ? 'ring-rarity-epic' :
+                                item.rarity === 'legendary' ? 'ring-rarity-legendary' : 'ring-muted'
+                              )}
                               title={item.name}
                             >
                               {item.image_url ? (
