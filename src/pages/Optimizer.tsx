@@ -343,10 +343,10 @@ export default function Optimizer() {
     const statValues = items.map(item => Math.round(getItemStatValue(item, priority) * 100));
     const costs = items.map(item => item.cost);
     
-    // Scale budget for efficiency (use increments of 50 to reduce memory)
-    const BUDGET_SCALE = 50;
+    // Scale budget for efficiency (use increments of 10 for better precision)
+    const BUDGET_SCALE = 10;
     const scaledCapacity = Math.floor(capacity / BUDGET_SCALE) + 1;
-    const scaledCosts = costs.map(c => Math.floor(c / BUDGET_SCALE));
+    const scaledCosts = costs.map(c => Math.ceil(c / BUDGET_SCALE));
     
     // DP table: dp[budget][itemCount] = { statValue, items }
     // Priority: More items > Higher stat value
@@ -455,11 +455,16 @@ export default function Optimizer() {
       let budgetLeft = remainingBudget;
       let slotsLeft = remainingSlots;
       
-      for (const candidate of candidates) {
-        if (slotsLeft <= 0 || budgetLeft < candidate.cost) continue;
+      // Greedy fill: try to spend as much remaining budget as possible
+      while (slotsLeft > 0) {
+        const bestCandidate = candidates.find(c => 
+          !selectedSet.has(c.idx) && c.cost <= budgetLeft
+        );
+        if (!bestCandidate) break;
         
-        bestItems.push(candidate.idx);
-        budgetLeft -= candidate.cost;
+        bestItems.push(bestCandidate.idx);
+        selectedSet.add(bestCandidate.idx);
+        budgetLeft -= bestCandidate.cost;
         slotsLeft--;
       }
     }
