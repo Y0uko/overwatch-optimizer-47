@@ -29,6 +29,13 @@ const categoryColors: Record<ItemCategory, string> = {
   gadget: 'bg-role-tank/20 text-role-tank',
 };
 
+const rarityRingColors: Record<string, string> = {
+  common: 'ring-rarity-common',
+  rare: 'ring-rarity-rare',
+  epic: 'ring-rarity-epic',
+  legendary: 'ring-rarity-legendary',
+};
+
 export function ItemCard({ item, selected, onSelect, showStats = true, compact = false }: ItemCardProps) {
   const [imageError, setImageError] = useState(false);
   const showFallback = !item.image_url || imageError;
@@ -52,8 +59,9 @@ export function ItemCard({ item, selected, onSelect, showStats = true, compact =
         <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
           {/* Item Image or Category Icon */}
           <div className={cn(
-            'flex-shrink-0 rounded-lg flex items-center justify-center overflow-hidden',
+            'flex-shrink-0 rounded-full flex items-center justify-center overflow-hidden ring-2',
             compact ? 'w-8 h-8 sm:w-10 sm:h-10' : 'w-10 h-10 sm:w-12 sm:h-12',
+            rarityRingColors[item.rarity] || 'ring-muted',
             showFallback && categoryColors[item.category]
           )}>
             {!showFallback ? (
