@@ -20,8 +20,8 @@ const rarities: ItemRarity[] = ['common', 'rare', 'epic', 'legendary'];
 const statFields: { key: string; label: string; perkType?: PerkType }[] = [
   { key: 'weapon_lifesteal', label: 'W.Lifesteal %', perkType: 'weapon-lifesteal' },
   { key: 'ability_lifesteal', label: 'A.Lifesteal %', perkType: 'ability-lifesteal' },
-  { key: 'attack_speed', label: 'Atk Speed %', perkType: 'attack-speed' },
-  { key: 'max_ammo', label: 'Max Ammo %', perkType: 'max-ammo' },
+  { key: 'attack_speed', label: 'Atk Speed %' },
+  { key: 'max_ammo', label: 'Max Ammo %' },
   { key: 'shield_bonus', label: 'Shield %', perkType: 'shield' },
   { key: 'armor_bonus', label: 'Armor %', perkType: 'armor' },
   { key: 'cooldown_reduction', label: 'CDR %', perkType: 'cooldown' },

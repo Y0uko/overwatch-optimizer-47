@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 import { Droplet, Zap, Package, Shield, Clock, Target } from 'lucide-react';
 import { Item } from '@/types/database';
 
-export type PerkType = 'weapon-lifesteal' | 'ability-lifesteal' | 'attack-speed' | 'max-ammo' | 'shield' | 'armor' | 'cooldown';
+export type PerkType = 'weapon-lifesteal' | 'ability-lifesteal' | 'shield' | 'armor' | 'cooldown';
 
 interface PerkBadgeProps {
   perk: PerkType;
@@ -20,16 +20,6 @@ const perkConfig: Record<PerkType, { icon: React.ReactNode; label: string; color
     icon: <Droplet className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
     label: 'A.Lifesteal',
     color: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  },
-  'attack-speed': {
-    icon: <Zap className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
-    label: 'Atk Speed',
-    color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  },
-  'max-ammo': {
-    icon: <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
-    label: 'Max Ammo',
-    color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
   },
   'shield': {
     icon: <Shield className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
@@ -90,13 +80,9 @@ export function getItemPerks(item: ItemWithPerks): { perk: PerkType; value: numb
   // Support both new percentage fields and legacy boolean fields
   const wls = item.weapon_lifesteal ?? (item.has_weapon_lifesteal ? 10 : 0);
   const als = item.ability_lifesteal ?? (item.has_ability_lifesteal ? 10 : 0);
-  const atk = item.attack_speed ?? (item.has_attack_speed ? 10 : 0);
-  const ammo = item.max_ammo ?? (item.has_max_ammo ? 10 : 0);
   
   if (wls && wls > 0) perks.push({ perk: 'weapon-lifesteal', value: wls });
   if (als && als > 0) perks.push({ perk: 'ability-lifesteal', value: als });
-  if (atk && atk > 0) perks.push({ perk: 'attack-speed', value: atk });
-  if (ammo && ammo > 0) perks.push({ perk: 'max-ammo', value: ammo });
   if (item.shield_bonus && item.shield_bonus > 0) perks.push({ perk: 'shield', value: item.shield_bonus });
   if (item.armor_bonus && item.armor_bonus > 0) perks.push({ perk: 'armor', value: item.armor_bonus });
   if (item.cooldown_reduction && item.cooldown_reduction > 0) perks.push({ perk: 'cooldown', value: item.cooldown_reduction });

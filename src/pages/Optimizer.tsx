@@ -268,7 +268,7 @@ export default function Optimizer() {
   const getItemValue = (item: Item, character: Character) => {
     const damageValue = (item.damage_bonus || 0) + (item.ability_power || 0) * 0.8;
     const survivalValue = (item.health_bonus || 0) * 0.1 + (item.shield_bonus || 0) * 0.15 + (item.armor_bonus || 0) * 0.2;
-    const utilityValue = (item.cooldown_reduction || 0) * 0.5 + (item.attack_speed || 0) * 0.3;
+    const utilityValue = (item.cooldown_reduction || 0) * 0.5;
     
     let roleMultiplier = 1;
     if (character.role === 'damage' && (item.damage_bonus || 0) > 0) roleMultiplier = 1.5;
@@ -298,9 +298,7 @@ export default function Optimizer() {
                (item.ability_lifesteal || 0) * 0.3;
       case 'damage':
         return (item.damage_bonus || 0) + 
-               (item.attack_speed || 0) * 0.7 + 
-               (item.weapon_lifesteal || 0) * 0.3 +
-               (item.max_ammo || 0) * 0.5;
+               (item.weapon_lifesteal || 0) * 0.3;
       case 'survival':
         return (item.health_bonus || 0) * 0.1 + 
                (item.shield_bonus || 0) * 0.15 + 
@@ -318,16 +316,7 @@ export default function Optimizer() {
       return -overflow * 2; // Penalize wasted CDR
     }
     if (priority === 'damage') {
-      const currentAS = currentItems.reduce((sum, i) => sum + (i.attack_speed || 0), 0);
-      const currentAmmo = currentItems.reduce((sum, i) => sum + (i.max_ammo || 0), 0);
-      const itemAS = item.attack_speed || 0;
-      const itemAmmo = item.max_ammo || 0;
-      let penalty = 0;
-      if (itemAS > 0 && currentAS >= 20) penalty -= 100;
-      else penalty -= Math.max(0, currentAS + itemAS - 20) * 2;
-      if (itemAmmo > 0 && currentAmmo >= 40) penalty -= 100;
-      else penalty -= Math.max(0, currentAmmo + itemAmmo - 40) * 2;
-      return penalty;
+      return 0;
     }
     return 0;
   };
@@ -934,8 +923,6 @@ export default function Optimizer() {
                           const totalShield = optimalBuild.reduce((s, i) => s + (i.shield_bonus || 0), 0);
                           const totalArmor = optimalBuild.reduce((s, i) => s + (i.armor_bonus || 0), 0);
                           const totalCDR = Math.min(20, optimalBuild.reduce((s, i) => s + (i.cooldown_reduction || 0), 0));
-                          const totalAS = Math.min(20, optimalBuild.reduce((s, i) => s + (i.attack_speed || 0), 0));
-                          const totalAmmo = Math.min(40, optimalBuild.reduce((s, i) => s + (i.max_ammo || 0), 0));
                           const totalWL = optimalBuild.reduce((s, i) => s + (i.weapon_lifesteal || 0), 0);
                           const totalAL = optimalBuild.reduce((s, i) => s + (i.ability_lifesteal || 0), 0);
 
@@ -982,16 +969,6 @@ export default function Optimizer() {
                                 {totalCDR > 0 && (
                                   <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-green-500/20 text-green-400 border border-green-500/30">
                                     -{totalCDR}% CDR
-                                  </span>
-                                )}
-                                {totalAS > 0 && (
-                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                                    <Zap className="h-2.5 w-2.5" />+{totalAS}% AS
-                                  </span>
-                                )}
-                                {totalAmmo > 0 && (
-                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                                    +{totalAmmo}% Ammo
                                   </span>
                                 )}
                                 {totalWL > 0 && (
