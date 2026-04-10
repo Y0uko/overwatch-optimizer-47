@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
