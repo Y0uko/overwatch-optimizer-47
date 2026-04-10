@@ -660,7 +660,7 @@ export default function Optimizer() {
 
         <div className="relative">
           {/* Hero portrait floating on the left */}
-          {selectedCharacter?.image_url && (
+          {(selectedCharacter?.full_body_url || selectedCharacter?.image_url) && (
             <motion.div
               key={selectedCharacter.id}
               initial={{ opacity: 0, x: -60, rotateY: 15 }}
@@ -677,7 +677,7 @@ export default function Optimizer() {
                 style={{ transformStyle: 'preserve-3d' }}
               >
                 <img
-                  src={selectedCharacter.image_url}
+                  src={selectedCharacter.full_body_url || selectedCharacter.image_url!}
                   alt={selectedCharacter.name}
                   className="h-[420px] w-auto object-contain opacity-70"
                   style={{ filter: 'drop-shadow(0 0 60px hsl(var(--primary) / 0.25))' }}

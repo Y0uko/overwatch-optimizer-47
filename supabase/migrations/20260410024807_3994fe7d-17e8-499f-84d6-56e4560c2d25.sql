@@ -1,0 +1,1 @@
+ALTER TABLE public.characters ADD COLUMN full_body_url text DEFAULT NULL;
