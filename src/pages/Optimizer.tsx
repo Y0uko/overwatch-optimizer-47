@@ -659,19 +659,19 @@ export default function Optimizer() {
         </div>
 
         <div className="relative">
-          {/* Hero portrait floating on the side */}
+          {/* Hero portrait floating on the left */}
           {selectedCharacter?.image_url && (
             <motion.div
               key={selectedCharacter.id}
-              initial={{ opacity: 0, x: 60, rotateY: -15 }}
+              initial={{ opacity: 0, x: -60, rotateY: 15 }}
               animate={{ opacity: 1, x: 0, rotateY: 0 }}
-              exit={{ opacity: 0, x: 60 }}
+              exit={{ opacity: 0, x: -60 }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
-              className="hidden xl:block fixed right-8 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
+              className="hidden xl:block fixed left-6 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
               style={{ perspective: '1000px' }}
             >
               <motion.div
-                animate={{ rotateY: [0, -6, 0, 6, 0], rotateX: [0, 3, 0, -3, 0] }}
+                animate={{ rotateY: [0, 6, 0, -6, 0], rotateX: [0, 3, 0, -3, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
                 className="relative"
                 style={{ transformStyle: 'preserve-3d' }}
@@ -679,8 +679,8 @@ export default function Optimizer() {
                 <img
                   src={selectedCharacter.image_url}
                   alt={selectedCharacter.name}
-                  className="h-[420px] w-auto object-contain drop-shadow-[0_0_40px_rgba(var(--primary),0.3)] opacity-80"
-                  style={{ filter: 'drop-shadow(0 0 60px hsl(var(--primary) / 0.2))' }}
+                  className="h-[420px] w-auto object-contain opacity-70"
+                  style={{ filter: 'drop-shadow(0 0 60px hsl(var(--primary) / 0.25))' }}
                 />
                 {/* Glow effect behind */}
                 <div className="absolute inset-0 -z-10 blur-3xl opacity-20 bg-primary rounded-full scale-75" />
