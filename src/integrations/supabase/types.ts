@@ -89,6 +89,7 @@ export type Database = {
           base_damage: number
           created_at: string
           description: string | null
+          full_body_url: string | null
           health: number
           id: string
           image_url: string | null
@@ -99,6 +100,7 @@ export type Database = {
           base_damage?: number
           created_at?: string
           description?: string | null
+          full_body_url?: string | null
           health?: number
           id?: string
           image_url?: string | null
@@ -109,6 +111,7 @@ export type Database = {
           base_damage?: number
           created_at?: string
           description?: string | null
+          full_body_url?: string | null
           health?: number
           id?: string
           image_url?: string | null
