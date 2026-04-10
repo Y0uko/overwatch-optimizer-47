@@ -1130,6 +1130,7 @@ export default function Optimizer() {
             </div>
           </div>
         </div>
+        </div>
       </div>
     </Layout>
   );
