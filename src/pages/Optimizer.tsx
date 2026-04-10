@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -657,7 +658,37 @@ export default function Optimizer() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="relative">
+          {/* Hero portrait floating on the side */}
+          {selectedCharacter?.image_url && (
+            <motion.div
+              key={selectedCharacter.id}
+              initial={{ opacity: 0, x: 60, rotateY: -15 }}
+              animate={{ opacity: 1, x: 0, rotateY: 0 }}
+              exit={{ opacity: 0, x: 60 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="hidden xl:block fixed right-8 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
+              style={{ perspective: '1000px' }}
+            >
+              <motion.div
+                animate={{ rotateY: [0, -6, 0, 6, 0], rotateX: [0, 3, 0, -3, 0] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                className="relative"
+                style={{ transformStyle: 'preserve-3d' }}
+              >
+                <img
+                  src={selectedCharacter.image_url}
+                  alt={selectedCharacter.name}
+                  className="h-[420px] w-auto object-contain drop-shadow-[0_0_40px_rgba(var(--primary),0.3)] opacity-80"
+                  style={{ filter: 'drop-shadow(0 0 60px hsl(var(--primary) / 0.2))' }}
+                />
+                {/* Glow effect behind */}
+                <div className="absolute inset-0 -z-10 blur-3xl opacity-20 bg-primary rounded-full scale-75" />
+              </motion.div>
+            </motion.div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Left: Configuration */}
           <div className="space-y-4 sm:space-y-6">
             {/* Character Selection - shown when no character selected */}
@@ -1099,6 +1130,7 @@ export default function Optimizer() {
               />
             </div>
           </div>
+        </div>
         </div>
       </div>
     </Layout>
