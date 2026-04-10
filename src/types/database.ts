@@ -9,6 +9,7 @@ export interface Character {
   health: number;
   base_damage: number;
   image_url: string | null;
+  full_body_url: string | null;
   description: string | null;
   created_at: string;
 }
